@@ -5,14 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,6 +35,7 @@ private val Vert = Color(0xFF15966A)
 private val Jaune = Color(0xFFFFC857)
 private val Violet = Color(0xFF8457D9)
 private val Fond = Color(0xFFF5F8FF)
+private val Texte = Color(0xFF202B45)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,98 +50,131 @@ class MainActivity : ComponentActivity() {
                     background = Fond
                 )
             ) {
-                Accueil()
+                WelcomeScreen()
             }
         }
     }
 }
 
 @Composable
-private fun Accueil() {
+private fun WelcomeScreen() {
     Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Fond),
+        modifier = Modifier.fillMaxSize(),
         color = Fond
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(horizontal = 28.dp, vertical = 34.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Mon profa",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Bleu
-            )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Logo typographique
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Mon",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1.5).sp,
+                        color = Texte
+                    )
 
-            Text(
-                text = "Apprends aujourd'hui, réussis demain !",
-                fontSize = 17.sp,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Center
-            )
+                    Spacer(modifier = Modifier.width(7.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        text = "profa",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1.5).sp,
+                        color = Bleu
+                    )
 
-            Text(
-                text = "Tes études, ton rythme, ta réussite.",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+                    Text(
+                        text = "✦",
+                        fontSize = 15.sp,
+                        color = Jaune,
+                        modifier = Modifier.padding(
+                            start = 3.dp,
+                            bottom = 22.dp
+                        )
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .width(44.dp)
+                        .height(4.dp)
+                        .background(
+                            Jaune,
+                            RoundedCornerShape(50)
+                        )
+                )
+            }
 
-            Text(
-                text = "Des cours, des exercices et des défis " +
-                    "pour préparer le BEPC et le BAC en Côte d'Ivoire.",
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center,
-                color = Color.DarkGray
-            )
+            // Message de bienvenue
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Nous allons procéder à la configuration de ton espace.",
+                    fontSize = 19.sp,
+                    lineHeight = 29.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Texte,
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
+                Text(
+                    text = "Tu es prêt ?",
+                    fontSize = 29.sp,
+                    lineHeight = 36.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.6).sp,
+                    color = Bleu,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // Bouton principal
             Button(
                 onClick = { },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .height(58.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Bleu,
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 3.dp,
+                    pressedElevation = 0.dp
+                )
             ) {
                 Text(
                     text = "Commencer",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
                 )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(
+                    text = "→",
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(
-                text = "BEPC • BAC • Révisions • Défis",
-                color = Vert,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-                    .background(
-                        Jaune,
-                        RoundedCornerShape(8.dp)
-                    )
-            )
         }
     }
 }
