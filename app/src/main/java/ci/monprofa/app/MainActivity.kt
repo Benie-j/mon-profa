@@ -14,9 +14,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -69,8 +73,7 @@ private fun WelcomeScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-
-            // Logo typographique
+            // Logo
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -79,9 +82,9 @@ private fun WelcomeScreen() {
                 ) {
                     Text(
                         text = "Mon",
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-1.5).sp,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.7).sp,
                         color = Texte
                     )
 
@@ -89,19 +92,19 @@ private fun WelcomeScreen() {
 
                     Text(
                         text = "profa",
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-1.5).sp,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.7).sp,
                         color = Bleu
                     )
 
                     Text(
                         text = "✦",
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         color = Jaune,
                         modifier = Modifier.padding(
                             start = 3.dp,
-                            bottom = 22.dp
+                            bottom = 20.dp
                         )
                     )
                 }
@@ -145,13 +148,13 @@ private fun WelcomeScreen() {
                 )
             }
 
-            // Bouton principal
+            // Bouton Commencer
             Button(
                 onClick = { },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(18.dp),
+                    .height(62.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Bleu,
                     contentColor = Color.White
@@ -167,13 +170,25 @@ private fun WelcomeScreen() {
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
-                Text(
-                    text = "→",
-                    fontSize = 21.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Box(
+                    modifier = Modifier
+                        .width(38.dp)
+                        .height(38.dp)
+                        .background(
+                            color = Color(0xFF4778D8),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Continuer",
+                        tint = Color.White,
+                        modifier = Modifier.width(23.dp)
+                    )
+                }
             }
         }
     }
