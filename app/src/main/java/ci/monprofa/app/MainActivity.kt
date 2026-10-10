@@ -3,6 +3,7 @@ package ci.monprofa.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,14 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,7 +27,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,7 +74,7 @@ private fun WelcomeScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Logo
+            // Logo Mon profa
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -174,20 +175,52 @@ private fun WelcomeScreen() {
 
                 Box(
                     modifier = Modifier
-                        .width(38.dp)
-                        .height(38.dp)
+                        .size(38.dp)
                         .background(
                             color = Color(0xFF4778D8),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Continuer",
-                        tint = Color.White,
-                        modifier = Modifier.width(23.dp)
-                    )
+                    // Flèche dessinée sans bibliothèque supplémentaire
+                    Canvas(
+                        modifier = Modifier.size(22.dp)
+                    ) {
+                        val stroke = 2.2.dp.toPx()
+                        val startX = size.width * 0.16f
+                        val endX = size.width * 0.82f
+                        val centerY = size.height * 0.5f
+
+                        drawLine(
+                            color = Color.White,
+                            start = Offset(startX, centerY),
+                            end = Offset(endX, centerY),
+                            strokeWidth = stroke,
+                            cap = StrokeCap.Round
+                        )
+
+                        drawLine(
+                            color = Color.White,
+                            start = Offset(
+                                size.width * 0.55f,
+                                size.height * 0.22f
+                            ),
+                            end = Offset(endX, centerY),
+                            strokeWidth = stroke,
+                            cap = StrokeCap.Round
+                        )
+
+                        drawLine(
+                            color = Color.White,
+                            start = Offset(endX, centerY),
+                            end = Offset(
+                                size.width * 0.55f,
+                                size.height * 0.78f
+                            ),
+                            strokeWidth = stroke,
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
             }
         }
