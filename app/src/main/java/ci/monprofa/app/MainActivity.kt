@@ -743,7 +743,7 @@ private fun RegistrationScreen(
     onBack: () -> Unit,
     onLogin: () -> Unit
 ) {
-    var nom by remember { mutableStateOf("") }
+    var pseudo by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var motDePasse by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
@@ -753,7 +753,7 @@ private fun RegistrationScreen(
         Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
 
     val formulaireValide =
-        nom.trim().isNotEmpty() &&
+        pseudo.trim().matches(Regex("^[A-Za-z0-9_.]{3,20}$")) &&
         emailValide &&
         motDePasse.length >= 8 &&
         confirmation == motDePasse
@@ -822,13 +822,13 @@ private fun RegistrationScreen(
             Spacer(Modifier.height(18.dp))
 
             FormField(
-                label = "Nom complet",
-                value = nom,
+                label = "Choisis ton pseudo",
+                value = pseudo,
                 onValueChange = {
-                    nom = it
+                    pseudo = it
                     message = ""
                 },
-                placeholder = "Ton nom et tes prénoms"
+                placeholder = "Ex. Junior225"
             )
 
             Spacer(Modifier.height(12.dp))
@@ -944,13 +944,14 @@ private fun LoginScreen(
     onBack: () -> Unit,
     onRegister: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
+    var pseudo by remember { mutableStateOf("") }
+    var emailRecuperation by remember { mutableStateOf("") }
     var motDePasse by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
     var modeRecuperation by remember { mutableStateOf(false) }
 
-    val emailValide =
-        Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    val pseudoValide = pseudo.trim().matches(Regex("^[A-Za-z0-9_.]{3,20}$"))
+    val emailValide = Patterns.EMAIL_ADDRESS.matcher(emailRecuperation.trim()).matches()
 
     AppBackground {
         Column(
@@ -999,16 +1000,29 @@ private fun LoginScreen(
 
             Spacer(Modifier.height(28.dp))
 
-            FormField(
-                label = "Adresse e-mail",
-                value = email,
-                onValueChange = {
-                    email = it
-                    message = ""
-                },
-                placeholder = "exemple@email.com",
-                keyboardType = KeyboardType.Email
-            )
+            if (modeRecuperation) {
+                FormField(
+                    label = "Adresse e-mail",
+                    value = emailRecuperation,
+                    onValueChange = {
+                        emailRecuperation = it
+                        message = ""
+                    },
+                    placeholder = "exemple@email.com",
+                    keyboardType = KeyboardType.Email
+                )
+            } else {
+                FormField(
+                    label = "Pseudo",
+                    value = pseudo,
+                    onValueChange = {
+                        pseudo = it
+                        message = ""
+                    },
+                    placeholder = "Ton pseudo",
+                    keyboardType = KeyboardType.Text
+                )
+            }
 
             if (!modeRecuperation) {
                 Spacer(Modifier.height(16.dp))
@@ -1055,8 +1069,8 @@ private fun LoginScreen(
 
             PrimaryButton(
                 text = if (modeRecuperation) "Continuer" else "Se connecter",
-                enabled = emailValide &&
-                    (modeRecuperation || motDePasse.isNotEmpty()),
+                enabled = if (modeRecuperation) emailValide
+                    else pseudoValide && motDePasse.isNotEmpty(),
                 onClick = {
                     message = if (modeRecuperation) {
                         "La récupération du mot de passe sera activée avec le système d'authentification."
