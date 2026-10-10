@@ -3,55 +3,75 @@ package ci.monprofa.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val Bleu = Color(0xFF2457C5)
-private val BleuClair = Color(0xFF4778D8)
-private val Vert = Color(0xFF15966A)
-private val Jaune = Color(0xFFFFC857)
+private val Blue = Color(0xFF2457C5)
+private val Green = Color(0xFF15966A)
+private val Yellow = Color(0xFFFFC857)
 private val Violet = Color(0xFF8457D9)
-private val Fond = Color(0xFFF5F8FF)
-private val Texte = Color(0xFF202B45)
+private val PaleBackground = Color(0xFFF5F8FF)
+private val DarkText = Color(0xFF202B45)
+private val MutedText = Color(0xFF74809A)
+private val BorderColor = Color(0xFFDCE5F7)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Bleu,
-                    secondary = Vert,
-                    tertiary = Violet,
-                    background = Fond
-                )
-            ) {
-                var page by remember { mutableStateOf(false) }
 
-                if (page) {
-                    ClassSelectionScreen(
-                        onBack = { page = false }
+        setContent {
+            MaterialTheme {
+                var page by remember { mutableStateOf("welcome") }
+                var selectedClass by remember { mutableStateOf("") }
+                var selectedSeries by remember { mutableStateOf("") }
+
+                when (page) {
+                    "welcome" -> WelcomeScreen(
+                        onStart = { page = "class" },
+                        onLogin = { page = "login" }
                     )
-                } else {
-                    WelcomeScreen(
-                        onStart = { page = true }
+
+                    "class" -> ClassSelectionScreen(
+                        onBack = { page = "welcome" },
+                        onContinue = { schoolClass, series ->
+                            selectedClass = schoolClass
+                            selectedSeries = series
+                            page = "register"
+                        }
+                    )
+
+                    "register" -> RegistrationScreen(
+                        schoolClass = selectedClass,
+                        series = selectedSeries,
+                        onBack = { page = "class" },
+                        onLogin = { page = "login" }
+                    )
+
+                    "login" -> LoginScreen(
+                        onBack = { page = "welcome" },
+                        onRegister = { page = "register" }
                     )
                 }
             }
@@ -60,104 +80,68 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AppBackground(content: @Composable () -> Unit) {
+private fun AppBackground(content: @Composable BoxScope.() -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFF9FBFF),
-                        Fond,
-                        Color(0xFFEDF3FF)
+                    colors = listOf(
+                        PaleBackground,
+                        Color(0xFFF0F5FF),
+                        Color(0xFFFAFBFF)
                     )
                 )
             )
     ) {
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 65.dp, y = 115.dp)
-                .size(190.dp)
-                .alpha(0.38f)
-                .background(Color(0xFFDCE8FF), CircleShape)
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-75).dp, y = (-85).dp)
-                .size(210.dp)
-                .alpha(0.32f)
-                .background(Color(0xFFD8F2EB), CircleShape)
-        )
-        Box(
-            Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 38.dp, top = 185.dp)
-                .size(9.dp)
-                .background(Jaune, CircleShape)
-        )
-        Box(
-            Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 30.dp)
-                .offset(y = (-35).dp)
-                .size(7.dp)
-                .background(Violet.copy(alpha = 0.65f), CircleShape)
-        )
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp)
+        ) {
+            drawCircle(
+                color = Blue.copy(alpha = 0.045f),
+                radius = 170.dp.toPx(),
+                center = Offset(size.width * 0.92f, 30.dp.toPx())
+            )
+            drawCircle(
+                color = Violet.copy(alpha = 0.035f),
+                radius = 115.dp.toPx(),
+                center = Offset(size.width * 0.05f, 180.dp.toPx())
+            )
+        }
+
         content()
     }
 }
 
 @Composable
 private fun BrandLogo() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Mon",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.7).sp,
-                color = Texte
-            )
-            Spacer(Modifier.width(7.dp))
-            Text(
-                "profa",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.7).sp,
-                color = Bleu
-            )
-            Text(
-                "✦",
-                modifier = Modifier.padding(start = 3.dp, bottom = 20.dp),
-                fontSize = 15.sp,
-                color = Jaune
-            )
-        }
-        Row(
-            modifier = Modifier.padding(top = 7.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(Blue),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier
-                    .width(25.dp)
-                    .height(4.dp)
-                    .background(Vert, CircleShape)
+            BookIllustration()
+        }
+
+        Column {
+            Text(
+                text = "Mon profa",
+                fontSize = 25.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Blue
             )
-            Spacer(Modifier.width(5.dp))
-            Box(
-                Modifier
-                    .width(44.dp)
-                    .height(4.dp)
-                    .background(Jaune, CircleShape)
-            )
-            Spacer(Modifier.width(5.dp))
-            Box(
-                Modifier
-                    .width(25.dp)
-                    .height(4.dp)
-                    .background(Violet, CircleShape)
+            Text(
+                text = "Apprendre, comprendre, réussir.",
+                fontSize = 11.sp,
+                color = MutedText
             )
         }
     }
@@ -165,90 +149,78 @@ private fun BrandLogo() {
 
 @Composable
 private fun BookIllustration() {
-    Box(
-        Modifier
-            .size(112.dp)
-            .background(
-                Color.White.copy(alpha = 0.88f),
-                RoundedCornerShape(34.dp)
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(Modifier.size(72.dp)) {
-            val w = size.width
-            val h = size.height
+    Canvas(modifier = Modifier.size(32.dp)) {
+        val w = size.width
+        val h = size.height
 
-            val left = Path().apply {
-                moveTo(w * .12f, h * .32f)
-                quadraticTo(w * .32f, h * .23f, w * .48f, h * .38f)
-                lineTo(w * .48f, h * .78f)
-                quadraticTo(w * .29f, h * .63f, w * .12f, h * .70f)
-                close()
-            }
-            val right = Path().apply {
-                moveTo(w * .52f, h * .38f)
-                quadraticTo(w * .70f, h * .23f, w * .88f, h * .32f)
-                lineTo(w * .88f, h * .70f)
-                quadraticTo(w * .69f, h * .63f, w * .52f, h * .78f)
-                close()
-            }
+        drawRoundRect(
+            color = Color.White,
+            topLeft = Offset(w * 0.12f, h * 0.22f),
+            size = androidx.compose.ui.geometry.Size(w * 0.76f, h * 0.60f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(5.dp.toPx())
+        )
 
-            drawPath(left, Bleu.copy(alpha = .18f))
-            drawPath(right, Color(0xFFDCE8FF))
-            drawLine(
-                Bleu, Offset(w * .5f, h * .37f),
-                Offset(w * .5f, h * .8f),
-                2.dp.toPx(), cap = StrokeCap.Round
-            )
-            drawLine(
-                Bleu, Offset(w * .2f, h * .43f),
-                Offset(w * .37f, h * .45f),
-                1.5.dp.toPx(), cap = StrokeCap.Round
-            )
-            drawLine(
-                Bleu, Offset(w * .2f, h * .53f),
-                Offset(w * .37f, h * .55f),
-                1.5.dp.toPx(), cap = StrokeCap.Round
-            )
-            drawLine(
-                Bleu, Offset(w * .63f, h * .45f),
-                Offset(w * .8f, h * .43f),
-                1.5.dp.toPx(), cap = StrokeCap.Round
-            )
-            drawLine(
-                Bleu, Offset(w * .63f, h * .55f),
-                Offset(w * .8f, h * .53f),
-                1.5.dp.toPx(), cap = StrokeCap.Round
-            )
-            drawCircle(
-                Jaune, w * .07f,
-                Offset(w * .82f, h * .15f)
-            )
-        }
+        drawLine(
+            color = Blue,
+            start = Offset(w * 0.50f, h * 0.28f),
+            end = Offset(w * 0.50f, h * 0.78f),
+            strokeWidth = 1.5.dp.toPx()
+        )
+
+        drawLine(
+            color = Green,
+            start = Offset(w * 0.23f, h * 0.40f),
+            end = Offset(w * 0.42f, h * 0.40f),
+            strokeWidth = 1.5.dp.toPx()
+        )
+
+        drawLine(
+            color = Green,
+            start = Offset(w * 0.23f, h * 0.52f),
+            end = Offset(w * 0.42f, h * 0.52f),
+            strokeWidth = 1.5.dp.toPx()
+        )
+
+        drawLine(
+            color = Violet,
+            start = Offset(w * 0.58f, h * 0.40f),
+            end = Offset(w * 0.78f, h * 0.40f),
+            strokeWidth = 1.5.dp.toPx()
+        )
+
+        drawLine(
+            color = Violet,
+            start = Offset(w * 0.58f, h * 0.52f),
+            end = Offset(w * 0.78f, h * 0.52f),
+            strokeWidth = 1.5.dp.toPx()
+        )
     }
 }
 
 @Composable
-private fun ForwardArrow() {
-    Canvas(Modifier.size(22.dp)) {
-        val stroke = 2.2.dp.toPx()
-        val startX = size.width * .12f
-        val endX = size.width * .84f
-        val middle = size.height * .5f
+private fun ForwardArrow(color: Color = Color.White) {
+    Canvas(modifier = Modifier.size(24.dp)) {
+        val startX = size.width * 0.16f
+        val endX = size.width * 0.84f
+        val middleY = size.height * 0.50f
 
         drawLine(
-            Color.White, Offset(startX, middle),
-            Offset(endX, middle), stroke, cap = StrokeCap.Round
+            color = color,
+            start = Offset(startX, middleY),
+            end = Offset(endX, middleY),
+            strokeWidth = 2.2.dp.toPx()
         )
         drawLine(
-            Color.White,
-            Offset(size.width * .56f, size.height * .20f),
-            Offset(endX, middle), stroke, cap = StrokeCap.Round
+            color = color,
+            start = Offset(size.width * 0.58f, size.height * 0.24f),
+            end = Offset(endX, middleY),
+            strokeWidth = 2.2.dp.toPx()
         )
         drawLine(
-            Color.White, Offset(endX, middle),
-            Offset(size.width * .56f, size.height * .80f),
-            stroke, cap = StrokeCap.Round
+            color = color,
+            start = Offset(size.width * 0.58f, size.height * 0.76f),
+            end = Offset(endX, middleY),
+            strokeWidth = 2.2.dp.toPx()
         )
     }
 }
@@ -256,234 +228,312 @@ private fun ForwardArrow() {
 @Composable
 private fun PrimaryButton(
     text: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp),
-        shape = RoundedCornerShape(22.dp),
+            .height(58.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Bleu,
+            containerColor = Blue,
             contentColor = Color.White,
-            disabledContainerColor = Bleu.copy(alpha = .35f),
+            disabledContainerColor = Blue.copy(alpha = 0.35f),
             disabledContentColor = Color.White
         ),
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 5.dp,
+            defaultElevation = 3.dp,
             pressedElevation = 1.dp
         )
     ) {
-        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.width(14.dp))
-        Box(
-            Modifier
-                .size(40.dp)
-                .background(BleuClair, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            ForwardArrow()
-        }
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        ForwardArrow()
     }
 }
 
 @Composable
-private fun WelcomeScreen(onStart: () -> Unit) {
+private fun PageHeading(
+    title: String,
+    subtitle: String
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            fontSize = 28.sp,
+            lineHeight = 34.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = DarkText
+        )
+        Text(
+            text = subtitle,
+            fontSize = 14.sp,
+            lineHeight = 21.sp,
+            color = MutedText
+        )
+    }
+}
+
+@Composable
+private fun WelcomeScreen(
+    onStart: () -> Unit,
+    onLogin: () -> Unit
+) {
     AppBackground {
         Column(
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp, vertical = 34.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 26.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             BrandLogo()
 
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 3.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                BookIllustration()
-                Spacer(Modifier.height(35.dp))
-                Text(
-                    "Nous allons procéder à la configuration de ton espace.",
-                    fontSize = 19.sp,
-                    lineHeight = 29.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Texte,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(25.dp))
-                Text(
-                    "Tu es prêt ?",
-                    fontSize = 30.sp,
-                    lineHeight = 38.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-.7).sp,
-                    color = Bleu,
-                    textAlign = TextAlign.Center
-                )
+                Box(
+                    modifier = Modifier
+                        .size(190.dp)
+                        .clip(RoundedCornerShape(42.dp))
+                        .background(Color.White.copy(alpha = 0.85f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(
+                            color = Yellow.copy(alpha = 0.28f),
+                            radius = size.minDimension * 0.36f,
+                            center = Offset(size.width * 0.72f, size.height * 0.26f)
+                        )
+                        drawCircle(
+                            color = Green.copy(alpha = 0.12f),
+                            radius = size.minDimension * 0.25f,
+                            center = Offset(size.width * 0.24f, size.height * 0.76f)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(112.dp)
+                            .clip(RoundedCornerShape(28.dp))
+                            .background(Blue),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.size(78.dp)) {
+                            val w = size.width
+                            val h = size.height
+
+                            drawRoundRect(
+                                color = Color.White,
+                                topLeft = Offset(w * 0.08f, h * 0.24f),
+                                size = androidx.compose.ui.geometry.Size(
+                                    w * 0.84f,
+                                    h * 0.55f
+                                ),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(
+                                    9.dp.toPx()
+                                )
+                            )
+                            drawLine(
+                                color = Blue,
+                                start = Offset(w * 0.50f, h * 0.29f),
+                                end = Offset(w * 0.50f, h * 0.76f),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                            drawLine(
+                                color = Green,
+                                start = Offset(w * 0.19f, h * 0.40f),
+                                end = Offset(w * 0.42f, h * 0.40f),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                            drawLine(
+                                color = Green,
+                                start = Offset(w * 0.19f, h * 0.52f),
+                                end = Offset(w * 0.42f, h * 0.52f),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                            drawLine(
+                                color = Violet,
+                                start = Offset(w * 0.58f, h * 0.40f),
+                                end = Offset(w * 0.81f, h * 0.40f),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                            drawLine(
+                                color = Violet,
+                                start = Offset(w * 0.58f, h * 0.52f),
+                                end = Offset(w * 0.81f, h * 0.52f),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Bienvenue sur Mon profa !",
+                        fontSize = 25.sp,
+                        lineHeight = 31.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DarkText,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Nous allons procéder à la configuration de ton espace.",
+                        fontSize = 15.sp,
+                        lineHeight = 23.sp,
+                        color = MutedText,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Tu es prêt ?",
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Blue
+                    )
+                }
             }
 
-            PrimaryButton("Commencer", onStart)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                PrimaryButton(
+                    text = "Commencer",
+                    onClick = onStart
+                )
+
+                Text(
+                    text = "J'ai déjà un compte",
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onLogin() }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Blue
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ClassSelectionScreen(onBack: () -> Unit) {
-    var selectedClass by remember { mutableStateOf<String?>(null) }
-    var selectedSeries by remember { mutableStateOf<String?>(null) }
-    var expanded by remember { mutableStateOf(false) }
+private fun ClassSelectionScreen(
+    onBack: () -> Unit,
+    onContinue: (String, String) -> Unit
+) {
+    var selectedClass by remember { mutableStateOf("3e") }
+    var selectedSeries by remember { mutableStateOf("") }
+    var showSeriesMenu by remember { mutableStateOf(false) }
 
     AppBackground {
         Column(
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp, vertical = 30.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             BrandLogo()
 
-            Row(
-                Modifier.fillMaxWidth().padding(top = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onBack) {
-                    Text("‹ Retour", color = Bleu, fontSize = 15.sp)
-                }
+            PageHeading(
+                title = "Choisis ta classe",
+                subtitle = "Nous allons adapter ton espace à ton niveau scolaire."
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                ClassOptionCard(
+                    title = "3e",
+                    subtitle = "Préparation au BEPC",
+                    accent = Green,
+                    selected = selectedClass == "3e",
+                    onClick = {
+                        selectedClass = "3e"
+                        selectedSeries = ""
+                        showSeriesMenu = false
+                    }
+                )
+
+                ClassOptionCard(
+                    title = "Terminale",
+                    subtitle = "Préparation au BAC",
+                    accent = Violet,
+                    selected = selectedClass == "Terminale",
+                    onClick = {
+                        selectedClass = "Terminale"
+                        showSeriesMenu = true
+                    }
+                )
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                "Choisis ta classe",
-                fontSize = 29.sp,
-                lineHeight = 36.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-.6).sp,
-                color = Bleu,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            Text(
-                "Sélectionne ta classe pour personnaliser ton espace.",
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                color = Texte.copy(alpha = .78f),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(28.dp))
-
-            ClassOptionCard(
-                title = "3e",
-                subtitle = "Préparation au BEPC",
-                selected = selectedClass == "3e",
-                accent = Vert,
-                onClick = {
-                    selectedClass = "3e"
-                    selectedSeries = null
-                }
-            )
-
-            Spacer(Modifier.height(14.dp))
-
-            ClassOptionCard(
-                title = "Terminale",
-                subtitle = "Préparation au BAC",
-                selected = selectedClass == "Terminale",
-                accent = Violet,
-                onClick = {
-                    selectedClass = "Terminale"
-                    selectedSeries = null
-                }
-            )
-
             if (selectedClass == "Terminale") {
-                Spacer(Modifier.height(22.dp))
+                Text(
+                    text = "Choisis ta série",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkText
+                )
 
-                Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        "Choisis ta série",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Texte
-                    )
-
-                    Spacer(Modifier.height(10.dp))
-
-                    Box {
-                        Surface(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf("A", "C", "D").forEach { series ->
+                        val selected = selectedSeries == series
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { expanded = true },
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color.White,
-                            border = BorderStroke(
-                                1.dp,
-                                if (selectedSeries != null) Bleu
-                                else Color(0xFFD9E2F2)
-                            ),
-                            shadowElevation = 1.dp
+                                .weight(1f)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(
+                                    if (selected) Blue else Color.White
+                                )
+                                .clickable { selectedSeries = series }
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 18.dp, vertical = 17.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    selectedSeries?.let { "Série $it" }
-                                        ?: "Sélectionner une série",
-                                    fontSize = 16.sp,
-                                    fontWeight = if (selectedSeries != null)
-                                        FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (selectedSeries != null) Bleu
-                                        else Texte.copy(alpha = .65f)
-                                )
-                                Text(
-                                    if (expanded) "⌃" else "⌄",
-                                    fontSize = 22.sp,
-                                    color = Bleu
-                                )
-                            }
-                        }
-
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            listOf("A", "C", "D").forEach { serie ->
-                                DropdownMenuItem(
-                                    text = { Text("Série $serie") },
-                                    onClick = {
-                                        selectedSeries = serie
-                                        expanded = false
-                                    }
-                                )
-                            }
+                            Text(
+                                text = "Série $series",
+                                color = if (selected) Color.White else DarkText,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.weight(1f))
-
             PrimaryButton(
                 text = "Continuer",
-                onClick = { },
                 enabled = selectedClass == "3e" ||
-                    (selectedClass == "Terminale" && selectedSeries != null)
+                    (selectedClass == "Terminale" && selectedSeries.isNotEmpty()),
+                onClick = {
+                    onContinue(selectedClass, selectedSeries)
+                }
             )
 
-            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Retour",
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clickable { onBack() }
+                    .padding(10.dp),
+                color = MutedText,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
@@ -492,93 +542,439 @@ private fun ClassSelectionScreen(onBack: () -> Unit) {
 private fun ClassOptionCard(
     title: String,
     subtitle: String,
-    selected: Boolean,
     accent: Color,
+    selected: Boolean,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) Color(0xFFEAF0FF)
-                else Color.White
-        ),
-        border = BorderStroke(
-            if (selected) 2.dp else 1.dp,
-            if (selected) Bleu else Color(0xFFE2E9F5)
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (selected) 3.dp else 1.dp
-        )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White)
+            .clickable { onClick() }
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(17.dp))
+                .background(accent.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier
-                    .size(48.dp)
-                    .background(
-                        accent.copy(alpha = .13f),
-                        RoundedCornerShape(15.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
+            Text(
+                text = title,
+                color = accent,
+                fontSize = 21.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = DarkText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = subtitle,
+                color = MutedText,
+                fontSize = 13.sp
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(if (selected) Blue else Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
                 Text(
-                    if (title == "3e") "3e" else "T",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = accent
+                    text = "✓",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(BorderColor.copy(alpha = 0.6f))
                 )
             }
+        }
+    }
+}
 
-            Spacer(Modifier.width(15.dp))
+@Composable
+private fun FormField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    password: Boolean = false
+) {
+    var passwordVisible by remember { mutableStateOf(false) }
 
-            Column(Modifier.weight(1f)) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkText
+        )
+
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
                 Text(
-                    title,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Texte
+                    text = placeholder,
+                    color = MutedText.copy(alpha = 0.8f)
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    subtitle,
-                    fontSize = 14.sp,
-                    color = Texte.copy(alpha = .68f)
-                )
-            }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(15.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            visualTransformation = if (password && !passwordVisible) {
+                PasswordVisualTransformation()
+            } else {
+                VisualTransformation.None
+            },
+            trailingIcon = {
+                if (password) {
+                    Text(
+                        text = if (passwordVisible) "Masquer" else "Voir",
+                        modifier = Modifier
+                            .clickable { passwordVisible = !passwordVisible }
+                            .padding(horizontal = 10.dp),
+                        color = Blue,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Blue,
+                unfocusedBorderColor = BorderColor,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedTextColor = DarkText,
+                unfocusedTextColor = DarkText,
+                cursorColor = Blue
+            )
+        )
+    }
+}
 
-            Box(
-                Modifier
-                    .size(24.dp)
-                    .background(
-                        if (selected) Bleu else Color(0xFFE7ECF5),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (selected) {
-                    Canvas(Modifier.size(14.dp)) {
-                        drawLine(
-                            Color.White,
-                            Offset(size.width * .18f, size.height * .52f),
-                            Offset(size.width * .42f, size.height * .75f),
-                            2.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                        drawLine(
-                            Color.White,
-                            Offset(size.width * .42f, size.height * .75f),
-                            Offset(size.width * .84f, size.height * .25f),
-                            2.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    }
+@Composable
+private fun RegistrationScreen(
+    schoolClass: String,
+    series: String,
+    onBack: () -> Unit,
+    onLogin: () -> Unit
+) {
+    var fullName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+
+    val emailLooksValid =
+        android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+
+    val formValid =
+        fullName.trim().isNotEmpty() &&
+        emailLooksValid &&
+        password.length >= 8 &&
+        confirmPassword == password
+
+    AppBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(19.dp)
+        ) {
+            BrandLogo()
+
+            PageHeading(
+                title = "Crée ton compte",
+                subtitle = "Quelques informations suffisent pour préparer ton espace d'apprentissage."
+            )
+
+            if (schoolClass.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Blue.copy(alpha = 0.08f))
+                        .padding(13.dp)
+                ) {
+                    Text(
+                        text = if (schoolClass == "Terminale") {
+                            "Ta classe : Terminale • Série $series"
+                        } else {
+                            "Ta classe : 3e"
+                        },
+                        color = Blue,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
                 }
             }
+
+            Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
+                FormField(
+                    label = "Nom complet",
+                    value = fullName,
+                    onValueChange = {
+                        fullName = it
+                        message = ""
+                    },
+                    placeholder = "Ex. : Kouassi Jean"
+                )
+
+                FormField(
+                    label = "Adresse e-mail",
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        message = ""
+                    },
+                    placeholder = "exemple@email.com",
+                    keyboardType = KeyboardType.Email
+                )
+
+                FormField(
+                    label = "Mot de passe",
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        message = ""
+                    },
+                    placeholder = "Au moins 8 caractères",
+                    keyboardType = KeyboardType.Password,
+                    password = true
+                )
+
+                FormField(
+                    label = "Confirme ton mot de passe",
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                        message = ""
+                    },
+                    placeholder = "Retape ton mot de passe",
+                    keyboardType = KeyboardType.Password,
+                    password = true
+                )
+            }
+
+            if (password.isNotEmpty() && password.length < 8) {
+                Text(
+                    text = "Le mot de passe doit contenir au moins 8 caractères.",
+                    color = Color(0xFFB54747),
+                    fontSize = 12.sp
+                )
+            }
+
+            if (confirmPassword.isNotEmpty() && confirmPassword != password) {
+                Text(
+                    text = "Les deux mots de passe ne correspondent pas.",
+                    color = Color(0xFFB54747),
+                    fontSize = 12.sp
+                )
+            }
+
+            if (message.isNotEmpty()) {
+                Text(
+                    text = message,
+                    color = Blue,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp
+                )
+            }
+
+            PrimaryButton(
+                text = "Créer mon compte",
+                enabled = formValid,
+                onClick = {
+                    message =
+                        "Le formulaire est valide. La création de compte sera activée après la configuration de l'authentification."
+                }
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Tu as déjà un compte ? ",
+                    color = MutedText,
+                    fontSize = 13.sp
+                )
+                Text(
+                    text = "Se connecter",
+                    modifier = Modifier
+                        .clickable { onLogin() }
+                        .padding(vertical = 8.dp),
+                    color = Blue,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Text(
+                text = "Retour au choix de la classe",
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clickable { onBack() }
+                    .padding(8.dp),
+                color = MutedText,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoginScreen(
+    onBack: () -> Unit,
+    onRegister: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+    var showRecoveryInfo by remember { mutableStateOf(false) }
+
+    val emailLooksValid =
+        android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+
+    AppBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp)
+        ) {
+            BrandLogo()
+
+            PageHeading(
+                title = "Content de te revoir !",
+                subtitle = "Connecte-toi pour retrouver ton espace d'apprentissage."
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Color.White)
+                    .padding(18.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {
+                    FormField(
+                        label = "Adresse e-mail",
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            message = ""
+                        },
+                        placeholder = "exemple@email.com",
+                        keyboardType = KeyboardType.Email
+                    )
+
+                    FormField(
+                        label = "Mot de passe",
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            message = ""
+                        },
+                        placeholder = "Ton mot de passe",
+                        keyboardType = KeyboardType.Password,
+                        password = true
+                    )
+
+                    Text(
+                        text = "Mot de passe oublié ?",
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickable {
+                                showRecoveryInfo = true
+                                message = "La récupération du mot de passe sera activée avec le système d'authentification."
+                            }
+                            .padding(vertical = 5.dp),
+                        color = Blue,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            if (message.isNotEmpty()) {
+                Text(
+                    text = message,
+                    color = if (showRecoveryInfo) MutedText else Blue,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp
+                )
+            }
+
+            PrimaryButton(
+                text = "Se connecter",
+                enabled = emailLooksValid && password.isNotEmpty(),
+                onClick = {
+                    showRecoveryInfo = false
+                    message =
+                        "La connexion sera activée après la configuration de l'authentification."
+                }
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Pas encore de compte ? ",
+                    color = MutedText,
+                    fontSize = 13.sp
+                )
+                Text(
+                    text = "S'inscrire",
+                    modifier = Modifier
+                        .clickable { onRegister() }
+                        .padding(vertical = 8.dp),
+                    color = Blue,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Text(
+                text = "Retour à l'accueil",
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clickable { onBack() }
+                    .padding(8.dp),
+                color = MutedText,
+                fontSize = 13.sp
+            )
         }
     }
 }
