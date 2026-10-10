@@ -3,38 +3,21 @@ package ci.monprofa.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,7 +34,6 @@ private val Texte = Color(0xFF202B45)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             MaterialTheme(
                 colorScheme = lightColorScheme(
@@ -61,20 +43,30 @@ class MainActivity : ComponentActivity() {
                     background = Fond
                 )
             ) {
-                WelcomeScreen()
+                var page by remember { mutableStateOf(false) }
+
+                if (page) {
+                    ClassSelectionScreen(
+                        onBack = { page = false }
+                    )
+                } else {
+                    WelcomeScreen(
+                        onStart = { page = true }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun WelcomeScreen() {
+private fun AppBackground(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
+                    listOf(
                         Color(0xFFF9FBFF),
                         Fond,
                         Color(0xFFEDF3FF)
@@ -82,337 +74,506 @@ private fun WelcomeScreen() {
                 )
             )
     ) {
-        // Halos décoratifs en arrière-plan
         Box(
-            modifier = Modifier
+            Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = 65.dp, y = 115.dp)
                 .size(190.dp)
                 .alpha(0.38f)
-                .background(
-                    Color(0xFFDCE8FF),
-                    CircleShape
-                )
+                .background(Color(0xFFDCE8FF), CircleShape)
         )
-
         Box(
-            modifier = Modifier
+            Modifier
                 .align(Alignment.BottomStart)
                 .offset(x = (-75).dp, y = (-85).dp)
                 .size(210.dp)
                 .alpha(0.32f)
-                .background(
-                    Color(0xFFD8F2EB),
-                    CircleShape
-                )
+                .background(Color(0xFFD8F2EB), CircleShape)
         )
-
-        // Petits éléments décoratifs
         Box(
-            modifier = Modifier
+            Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 38.dp, top = 185.dp)
                 .size(9.dp)
                 .background(Jaune, CircleShape)
         )
-
         Box(
-            modifier = Modifier
+            Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 30.dp)
                 .offset(y = (-35).dp)
                 .size(7.dp)
-                .background(
-                    Violet.copy(alpha = 0.65f),
-                    CircleShape
-                )
+                .background(Violet.copy(alpha = 0.65f), CircleShape)
         )
+        content()
+    }
+}
 
+@Composable
+private fun BrandLogo() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Mon",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.7).sp,
+                color = Texte
+            )
+            Spacer(Modifier.width(7.dp))
+            Text(
+                "profa",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.7).sp,
+                color = Bleu
+            )
+            Text(
+                "✦",
+                modifier = Modifier.padding(start = 3.dp, bottom = 20.dp),
+                fontSize = 15.sp,
+                color = Jaune
+            )
+        }
+        Row(
+            modifier = Modifier.padding(top = 7.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .width(25.dp)
+                    .height(4.dp)
+                    .background(Vert, CircleShape)
+            )
+            Spacer(Modifier.width(5.dp))
+            Box(
+                Modifier
+                    .width(44.dp)
+                    .height(4.dp)
+                    .background(Jaune, CircleShape)
+            )
+            Spacer(Modifier.width(5.dp))
+            Box(
+                Modifier
+                    .width(25.dp)
+                    .height(4.dp)
+                    .background(Violet, CircleShape)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BookIllustration() {
+    Box(
+        Modifier
+            .size(112.dp)
+            .background(
+                Color.White.copy(alpha = 0.88f),
+                RoundedCornerShape(34.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(Modifier.size(72.dp)) {
+            val w = size.width
+            val h = size.height
+
+            val left = Path().apply {
+                moveTo(w * .12f, h * .32f)
+                quadraticTo(w * .32f, h * .23f, w * .48f, h * .38f)
+                lineTo(w * .48f, h * .78f)
+                quadraticTo(w * .29f, h * .63f, w * .12f, h * .70f)
+                close()
+            }
+            val right = Path().apply {
+                moveTo(w * .52f, h * .38f)
+                quadraticTo(w * .70f, h * .23f, w * .88f, h * .32f)
+                lineTo(w * .88f, h * .70f)
+                quadraticTo(w * .69f, h * .63f, w * .52f, h * .78f)
+                close()
+            }
+
+            drawPath(left, Bleu.copy(alpha = .18f))
+            drawPath(right, Color(0xFFDCE8FF))
+            drawLine(
+                Bleu, Offset(w * .5f, h * .37f),
+                Offset(w * .5f, h * .8f),
+                2.dp.toPx(), cap = StrokeCap.Round
+            )
+            drawLine(
+                Bleu, Offset(w * .2f, h * .43f),
+                Offset(w * .37f, h * .45f),
+                1.5.dp.toPx(), cap = StrokeCap.Round
+            )
+            drawLine(
+                Bleu, Offset(w * .2f, h * .53f),
+                Offset(w * .37f, h * .55f),
+                1.5.dp.toPx(), cap = StrokeCap.Round
+            )
+            drawLine(
+                Bleu, Offset(w * .63f, h * .45f),
+                Offset(w * .8f, h * .43f),
+                1.5.dp.toPx(), cap = StrokeCap.Round
+            )
+            drawLine(
+                Bleu, Offset(w * .63f, h * .55f),
+                Offset(w * .8f, h * .53f),
+                1.5.dp.toPx(), cap = StrokeCap.Round
+            )
+            drawCircle(
+                Jaune, w * .07f,
+                Offset(w * .82f, h * .15f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ForwardArrow() {
+    Canvas(Modifier.size(22.dp)) {
+        val stroke = 2.2.dp.toPx()
+        val startX = size.width * .12f
+        val endX = size.width * .84f
+        val middle = size.height * .5f
+
+        drawLine(
+            Color.White, Offset(startX, middle),
+            Offset(endX, middle), stroke, cap = StrokeCap.Round
+        )
+        drawLine(
+            Color.White,
+            Offset(size.width * .56f, size.height * .20f),
+            Offset(endX, middle), stroke, cap = StrokeCap.Round
+        )
+        drawLine(
+            Color.White, Offset(endX, middle),
+            Offset(size.width * .56f, size.height * .80f),
+            stroke, cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Bleu,
+            contentColor = Color.White,
+            disabledContainerColor = Bleu.copy(alpha = .35f),
+            disabledContentColor = Color.White
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 5.dp,
+            pressedElevation = 1.dp
+        )
+    ) {
+        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(14.dp))
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(BleuClair, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            ForwardArrow()
+        }
+    }
+}
+
+@Composable
+private fun WelcomeScreen(onStart: () -> Unit) {
+    AppBackground {
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
-                .padding(
-                    horizontal = 28.dp,
-                    vertical = 34.dp
-                ),
+                .padding(horizontal = 28.dp, vertical = 34.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Logo revisité
+            BrandLogo()
+
             Column(
+                Modifier.fillMaxWidth().padding(horizontal = 3.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Mon",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.7).sp,
-                        color = Texte
-                    )
-
-                    Spacer(modifier = Modifier.width(7.dp))
-
-                    Text(
-                        text = "profa",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.7).sp,
-                        color = Bleu
-                    )
-
-                    Spacer(modifier = Modifier.width(3.dp))
-
-                    Text(
-                        text = "✦",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Jaune,
-                        modifier = Modifier.padding(
-                            bottom = 20.dp
-                        )
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.padding(top = 7.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(25.dp)
-                            .height(4.dp)
-                            .clip(CircleShape)
-                            .background(Vert)
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .width(44.dp)
-                            .height(4.dp)
-                            .clip(CircleShape)
-                            .background(Jaune)
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .width(25.dp)
-                            .height(4.dp)
-                            .clip(CircleShape)
-                            .background(Violet)
-                    )
-                }
-            }
-
-            // Message principal
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 3.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Petite illustration éducative dessinée en Compose
-                Box(
-                    modifier = Modifier
-                        .size(112.dp)
-                        .background(
-                            Color.White.copy(alpha = 0.88f),
-                            RoundedCornerShape(34.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        val w = size.width
-                        val h = size.height
-
-                        // Livre ouvert
-                        val livreGauche = Path().apply {
-                            moveTo(w * 0.12f, h * 0.32f)
-                            quadraticTo(
-                                w * 0.32f, h * 0.23f,
-                                w * 0.48f, h * 0.38f
-                            )
-                            lineTo(w * 0.48f, h * 0.78f)
-                            quadraticTo(
-                                w * 0.29f, h * 0.63f,
-                                w * 0.12f, h * 0.70f
-                            )
-                            close()
-                        }
-
-                        val livreDroite = Path().apply {
-                            moveTo(w * 0.52f, h * 0.38f)
-                            quadraticTo(
-                                w * 0.70f, h * 0.23f,
-                                w * 0.88f, h * 0.32f
-                            )
-                            lineTo(w * 0.88f, h * 0.70f)
-                            quadraticTo(
-                                w * 0.69f, h * 0.63f,
-                                w * 0.52f, h * 0.78f
-                            )
-                            close()
-                        }
-
-                        drawPath(
-                            path = livreGauche,
-                            color = Bleu.copy(alpha = 0.18f)
-                        )
-                        drawPath(
-                            path = livreDroite,
-                            color = Color(0xFFDCE8FF)
-                        )
-
-                        drawLine(
-                            color = Bleu,
-                            start = Offset(w * 0.50f, h * 0.37f),
-                            end = Offset(w * 0.50f, h * 0.80f),
-                            strokeWidth = 2.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-
-                        drawLine(
-                            color = Bleu,
-                            start = Offset(w * 0.20f, h * 0.43f),
-                            end = Offset(w * 0.37f, h * 0.45f),
-                            strokeWidth = 1.5.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-
-                        drawLine(
-                            color = Bleu,
-                            start = Offset(w * 0.20f, h * 0.53f),
-                            end = Offset(w * 0.37f, h * 0.55f),
-                            strokeWidth = 1.5.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-
-                        drawLine(
-                            color = Bleu,
-                            start = Offset(w * 0.63f, h * 0.45f),
-                            end = Offset(w * 0.80f, h * 0.43f),
-                            strokeWidth = 1.5.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-
-                        drawLine(
-                            color = Bleu,
-                            start = Offset(w * 0.63f, h * 0.55f),
-                            end = Offset(w * 0.80f, h * 0.53f),
-                            strokeWidth = 1.5.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-
-                        // Petit éclat jaune
-                        drawCircle(
-                            color = Jaune,
-                            radius = w * 0.07f,
-                            center = Offset(w * 0.82f, h * 0.15f)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(35.dp))
-
+                BookIllustration()
+                Spacer(Modifier.height(35.dp))
                 Text(
-                    text = "Nous allons procéder à la configuration de ton espace.",
+                    "Nous allons procéder à la configuration de ton espace.",
                     fontSize = 19.sp,
                     lineHeight = 29.sp,
                     fontWeight = FontWeight.Medium,
                     color = Texte,
                     textAlign = TextAlign.Center
                 )
-
-                Spacer(modifier = Modifier.height(25.dp))
-
+                Spacer(Modifier.height(25.dp))
                 Text(
-                    text = "Tu es prêt ?",
+                    "Tu es prêt ?",
                     fontSize = 30.sp,
                     lineHeight = 38.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.7).sp,
+                    letterSpacing = (-.7).sp,
                     color = Bleu,
                     textAlign = TextAlign.Center
                 )
             }
 
-            // Bouton principal
-            Button(
+            PrimaryButton("Commencer", onStart)
+        }
+    }
+}
+
+@Composable
+private fun ClassSelectionScreen(onBack: () -> Unit) {
+    var selectedClass by remember { mutableStateOf<String?>(null) }
+    var selectedSeries by remember { mutableStateOf<String?>(null) }
+    var expanded by remember { mutableStateOf(false) }
+
+    AppBackground {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 28.dp, vertical = 30.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            BrandLogo()
+
+            Row(
+                Modifier.fillMaxWidth().padding(top = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onBack) {
+                    Text("‹ Retour", color = Bleu, fontSize = 15.sp)
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                "Choisis ta classe",
+                fontSize = 29.sp,
+                lineHeight = 36.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-.6).sp,
+                color = Bleu,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                "Sélectionne ta classe pour personnaliser ton espace.",
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
+                color = Texte.copy(alpha = .78f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(28.dp))
+
+            ClassOptionCard(
+                title = "3e",
+                subtitle = "Préparation au BEPC",
+                selected = selectedClass == "3e",
+                accent = Vert,
+                onClick = {
+                    selectedClass = "3e"
+                    selectedSeries = null
+                }
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            ClassOptionCard(
+                title = "Terminale",
+                subtitle = "Préparation au BAC",
+                selected = selectedClass == "Terminale",
+                accent = Violet,
+                onClick = {
+                    selectedClass = "Terminale"
+                    selectedSeries = null
+                }
+            )
+
+            if (selectedClass == "Terminale") {
+                Spacer(Modifier.height(22.dp))
+
+                Column(Modifier.fillMaxWidth()) {
+                    Text(
+                        "Choisis ta série",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Texte
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Box {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expanded = true },
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.White,
+                            border = BorderStroke(
+                                1.dp,
+                                if (selectedSeries != null) Bleu
+                                else Color(0xFFD9E2F2)
+                            ),
+                            shadowElevation = 1.dp
+                        ) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 18.dp, vertical = 17.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    selectedSeries?.let { "Série $it" }
+                                        ?: "Sélectionner une série",
+                                    fontSize = 16.sp,
+                                    fontWeight = if (selectedSeries != null)
+                                        FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (selectedSeries != null) Bleu
+                                        else Texte.copy(alpha = .65f)
+                                )
+                                Text(
+                                    if (expanded) "⌃" else "⌄",
+                                    fontSize = 22.sp,
+                                    color = Bleu
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            listOf("A", "C", "D").forEach { serie ->
+                                DropdownMenuItem(
+                                    text = { Text("Série $serie") },
+                                    onClick = {
+                                        selectedSeries = serie
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            PrimaryButton(
+                text = "Continuer",
                 onClick = { },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(22.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Bleu,
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 5.dp,
-                    pressedElevation = 1.dp
-                )
+                enabled = selectedClass == "3e" ||
+                    (selectedClass == "Terminale" && selectedSeries != null)
+            )
+
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ClassOptionCard(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    accent: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) Color(0xFFEAF0FF)
+                else Color.White
+        ),
+        border = BorderStroke(
+            if (selected) 2.dp else 1.dp,
+            if (selected) Bleu else Color(0xFFE2E9F5)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (selected) 3.dp else 1.dp
+        )
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .background(
+                        accent.copy(alpha = .13f),
+                        RoundedCornerShape(15.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Commencer",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    if (title == "3e") "3e" else "T",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = accent
                 )
+            }
 
-                Spacer(modifier = Modifier.width(14.dp))
+            Spacer(Modifier.width(15.dp))
 
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = BleuClair,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(
-                        modifier = Modifier.size(22.dp)
-                    ) {
-                        val stroke = 2.2.dp.toPx()
-                        val startX = size.width * 0.12f
-                        val endX = size.width * 0.84f
-                        val centerY = size.height * 0.5f
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Texte
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    subtitle,
+                    fontSize = 14.sp,
+                    color = Texte.copy(alpha = .68f)
+                )
+            }
 
+            Box(
+                Modifier
+                    .size(24.dp)
+                    .background(
+                        if (selected) Bleu else Color(0xFFE7ECF5),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (selected) {
+                    Canvas(Modifier.size(14.dp)) {
                         drawLine(
-                            color = Color.White,
-                            start = Offset(startX, centerY),
-                            end = Offset(endX, centerY),
-                            strokeWidth = stroke,
+                            Color.White,
+                            Offset(size.width * .18f, size.height * .52f),
+                            Offset(size.width * .42f, size.height * .75f),
+                            2.dp.toPx(),
                             cap = StrokeCap.Round
                         )
-
                         drawLine(
-                            color = Color.White,
-                            start = Offset(
-                                size.width * 0.56f,
-                                size.height * 0.20f
-                            ),
-                            end = Offset(endX, centerY),
-                            strokeWidth = stroke,
-                            cap = StrokeCap.Round
-                        )
-
-                        drawLine(
-                            color = Color.White,
-                            start = Offset(endX, centerY),
-                            end = Offset(
-                                size.width * 0.56f,
-                                size.height * 0.80f
-                            ),
-                            strokeWidth = stroke,
+                            Color.White,
+                            Offset(size.width * .42f, size.height * .75f),
+                            Offset(size.width * .84f, size.height * .25f),
+                            2.dp.toPx(),
                             cap = StrokeCap.Round
                         )
                     }
