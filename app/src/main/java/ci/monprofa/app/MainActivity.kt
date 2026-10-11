@@ -2078,9 +2078,7 @@ private fun DashboardScreen(
 
                     "Version de l'application" -> PageInformation(
                         "Version de l'application",
-                        "Version ${runCatching { ci.monprofa.app.runCatching {
-                    context.packageManager.getPackageInfo(context.packageName, 0).versionName
-                }.getOrNull() ?: "1.0" }.getOrDefault("non renseignée")}"
+                        "Version ${runCatching { ci.monprofa.app."1.0" }.getOrDefault("non renseignée")}"
                     )
 
                     else -> {
