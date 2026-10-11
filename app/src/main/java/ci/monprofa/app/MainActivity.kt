@@ -1810,7 +1810,7 @@ private fun DashboardScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Stretch
+                    verticalAlignment = Alignment.Top
                 ) {
                     ligne.forEach { item ->
                         val description = when (item.second) {
