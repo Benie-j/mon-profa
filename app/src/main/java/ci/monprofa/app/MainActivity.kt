@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.platform.LocalConfiguration
 
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
                 var serieChoisie by remember { mutableStateOf<String?>(null) }
                 var emailInscription by remember { mutableStateOf("") }
                 var pseudoUtilisateur by remember { mutableStateOf("") }
+                var accessToken by remember { mutableStateOf<String?>(null) }
                 val contexteApp = androidx.compose.ui.platform.LocalContext.current
 
                 val pageActuelle = historique.last()
@@ -107,20 +109,62 @@ class MainActivity : ComponentActivity() {
                         onLogin = {
                             historique.add("connexion")
                         },
-                        onContinueVerification = { email, pseudo ->
-                            emailInscription = email
-                            pseudoUtilisateur = pseudo.trim()
-                            contexteApp.getSharedPreferences(
-                                "mon_profa", android.content.Context.MODE_PRIVATE
-                            ).edit().putString("pseudo", pseudoUtilisateur).apply()
-                            historique.add("verification")
+                        onContinueVerification = { email, pseudo, password, schoolClass, series ->
+                            try {
+                                val result = SupabaseBackend.signUp(
+                                    email = email,
+                                    password = password,
+                                    pseudo = pseudo,
+                                    schoolClass = schoolClass,
+                                    series = series
+                                )
+                                emailInscription = email
+                                pseudoUtilisateur = pseudo.trim()
+                                classeChoisie = schoolClass
+                                serieChoisie = series
+                                contexteApp.getSharedPreferences(
+                                    "mon_profa", android.content.Context.MODE_PRIVATE
+                                ).edit().putString("pseudo", pseudoUtilisateur).apply()
+
+                                if (!result.accessToken.isNullOrBlank()) {
+                                    accessToken = result.accessToken
+                                    historique.add("dashboard")
+                                } else {
+                                    historique.add("verification")
+                                }
+                                null
+                            } catch (e: Exception) {
+                                e.message ?: "Impossible de créer le compte. Réessaie."
+                            }
                         }
                     )
 
                     "verification" -> EmailVerificationScreen(
                         email = emailInscription,
                         onBack = { historique.removeAt(historique.lastIndex) },
-                        onContinue = { historique.add("dashboard") }
+                        onContinue = { code ->
+                            try {
+                                val result = SupabaseBackend.verifySignupCode(
+                                    emailInscription, code
+                                )
+                                accessToken = result.accessToken
+                                    ?: throw IllegalStateException(
+                                        "Confirmation reçue. Connecte-toi pour continuer."
+                                    )
+                                historique.add("dashboard")
+                                null
+                            } catch (e: Exception) {
+                                e.message ?: "Code invalide ou expiré."
+                            }
+                        },
+                        onResend = {
+                            try {
+                                SupabaseBackend.resendSignupCode(emailInscription)
+                                null
+                            } catch (e: Exception) {
+                                e.message ?: "Impossible de renvoyer le code."
+                            }
+                        }
                     )
 
                     "dashboard" -> DashboardScreen(
@@ -144,7 +188,38 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         onRegister = {
-                            historique.add("inscription")
+                            historique.add("classe")
+                        },
+                        onLogin = { email, password ->
+                            try {
+                                val result = SupabaseBackend.signIn(email, password)
+                                val token = result.accessToken
+                                    ?: throw IllegalStateException("Session non reçue.")
+                                val userId = result.userId
+                                    ?: throw IllegalStateException("Identifiant du compte absent.")
+                                val profile = SupabaseBackend.getProfile(token, userId)
+
+                                accessToken = token
+                                emailInscription = email
+                                pseudoUtilisateur = profile.pseudo
+                                classeChoisie = profile.schoolClass
+                                serieChoisie = profile.series.orEmpty()
+                                contexteApp.getSharedPreferences(
+                                    "mon_profa", android.content.Context.MODE_PRIVATE
+                                ).edit().putString("pseudo", profile.pseudo).apply()
+                                historique.add("dashboard")
+                                null
+                            } catch (e: Exception) {
+                                e.message ?: "Connexion impossible. Vérifie tes identifiants."
+                            }
+                        },
+                        onRecover = { email ->
+                            try {
+                                SupabaseBackend.sendPasswordReset(email)
+                                null
+                            } catch (e: Exception) {
+                                e.message ?: "Impossible d'envoyer l'e-mail de récupération."
+                            }
                         }
                     )
                 }
@@ -775,13 +850,15 @@ private fun RegistrationScreen(
     series: String,
     onBack: () -> Unit,
     onLogin: () -> Unit,
-    onContinueVerification: (String, String) -> Unit
+    onContinueVerification: suspend (String, String, String, String, String) -> String?
 ) {
     var pseudo by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var motDePasse by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val emailValide =
         Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
@@ -938,9 +1015,18 @@ private fun RegistrationScreen(
             Spacer(Modifier.height(20.dp))
 
             PrimaryButton(
-                text = "Créer mon compte",
-                enabled = formulaireValide,
-                onClick = { onContinueVerification(email.trim(), pseudo.trim()) }
+                text = if (loading) "Création du compte..." else "Créer mon compte",
+                enabled = formulaireValide && !loading,
+                onClick = {
+                    scope.launch {
+                        loading = true
+                        message = onContinueVerification(
+                            email.trim(), pseudo.trim(), motDePasse,
+                            schoolClass, series
+                        ).orEmpty()
+                        loading = false
+                    }
+                }
             )
 
             Spacer(Modifier.height(12.dp))
@@ -973,15 +1059,19 @@ private fun RegistrationScreen(
 @Composable
 private fun LoginScreen(
     onBack: () -> Unit,
-    onRegister: () -> Unit
+    onRegister: () -> Unit,
+    onLogin: suspend (String, String) -> String?,
+    onRecover: suspend (String) -> String?
 ) {
     var pseudo by remember { mutableStateOf("") }
     var emailRecuperation by remember { mutableStateOf("") }
     var motDePasse by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
     var modeRecuperation by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    val pseudoValide = pseudo.trim().matches(Regex("^[A-Za-z0-9_.]{3,20}$"))
+    val emailConnexionValide = Patterns.EMAIL_ADDRESS.matcher(pseudo.trim()).matches()
     val emailValide = Patterns.EMAIL_ADDRESS.matcher(emailRecuperation.trim()).matches()
 
     AppBackground {
@@ -1019,7 +1109,7 @@ private fun LoginScreen(
 
             Text(
                 if (modeRecuperation) {
-                    "La récupération de ton compte sera bientôt disponible."
+                    "Saisis ton adresse e-mail pour recevoir les instructions de récupération."
                 } else {
                     "Connecte-toi pour retrouver ton espace d'apprentissage."
                 },
@@ -1044,14 +1134,14 @@ private fun LoginScreen(
                 )
             } else {
                 FormField(
-                    label = "Pseudo",
+                    label = "Adresse e-mail",
                     value = pseudo,
                     onValueChange = {
                         pseudo = it
                         message = ""
                     },
-                    placeholder = "Ton pseudo",
-                    keyboardType = KeyboardType.Text
+                    placeholder = "exemple@email.com",
+                    keyboardType = KeyboardType.Email
                 )
             }
 
@@ -1099,14 +1189,23 @@ private fun LoginScreen(
             }
 
             PrimaryButton(
-                text = if (modeRecuperation) "Continuer" else "Se connecter",
-                enabled = if (modeRecuperation) emailValide
-                    else pseudoValide && motDePasse.isNotEmpty(),
+                text = when {
+                    loading -> "Patiente..."
+                    modeRecuperation -> "Envoyer les instructions"
+                    else -> "Se connecter"
+                },
+                enabled = !loading && if (modeRecuperation) emailValide
+                    else emailConnexionValide && motDePasse.isNotEmpty(),
                 onClick = {
-                    message = if (modeRecuperation) {
-                        "La récupération du mot de passe sera activée avec le système d'authentification."
-                    } else {
-                        "La connexion réelle sera activée lorsque le système d'authentification sera connecté."
+                    scope.launch {
+                        loading = true
+                        message = if (modeRecuperation) {
+                            val error = onRecover(emailRecuperation.trim())
+                            error ?: "Si cette adresse correspond à un compte, un e-mail de récupération a été envoyé."
+                        } else {
+                            onLogin(pseudo.trim(), motDePasse).orEmpty()
+                        }
+                        loading = false
                     }
                 }
             )
@@ -1156,10 +1255,14 @@ private fun LoginScreen(
 private fun EmailVerificationScreen(
     email: String,
     onBack: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: suspend (String) -> String?,
+    onResend: suspend () -> String?
 ) {
     var code by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+    var verifying by remember { mutableStateOf(false) }
+    var resending by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     AppBackground {
         Column(
@@ -1256,16 +1359,29 @@ private fun EmailVerificationScreen(
 
                     Spacer(Modifier.height(18.dp))
                     PrimaryButton(
-                        text = "C'est parti ! →",
-                        enabled = code.length == 6,
-                        onClick = onContinue
+                        text = if (verifying) "Vérification..." else "Confirmer mon compte",
+                        enabled = code.length == 6 && !verifying,
+                        onClick = {
+                            scope.launch {
+                                verifying = true
+                                message = onContinue(code).orEmpty()
+                                verifying = false
+                            }
+                        }
                     )
 
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "Tu n'as rien reçu ? Renvoyer le code",
+                        if (resending) "Envoi du code..." else "Tu n'as rien reçu ? Renvoyer le code",
                         modifier = Modifier.clickable {
-                            message = "Le renvoi du code sera disponible après le branchement du système d'authentification."
+                            if (!resending) {
+                                scope.launch {
+                                    resending = true
+                                    message = onResend()
+                                        ?: "Si ton inscription est en attente, un nouveau code a été envoyé."
+                                    resending = false
+                                }
+                            }
                         }.padding(vertical = 10.dp),
                         color = Bleu,
                         fontSize = 13.sp,
@@ -1284,7 +1400,7 @@ private fun EmailVerificationScreen(
 
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Mode aperçu : le code n'est pas encore vérifié par un serveur.",
+                        "Ton code est vérifié par le service sécurisé d'authentification.",
                         fontSize = 11.sp,
                         lineHeight = 16.sp,
                         color = Texte.copy(alpha = .58f),
