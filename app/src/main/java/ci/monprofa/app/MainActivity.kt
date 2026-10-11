@@ -466,12 +466,12 @@ private fun AppBackground(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun BrandLogo() {
+private fun BrandLogo(compact: Boolean = false) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Mon",
-                fontSize = 32.sp,
+                fontSize = if (compact) 21.sp else 32.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.7).sp,
                 color = Texte
@@ -479,40 +479,40 @@ private fun BrandLogo() {
             Spacer(Modifier.width(7.dp))
             Text(
                 "profa",
-                fontSize = 32.sp,
+                fontSize = if (compact) 21.sp else 32.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.7).sp,
                 color = Bleu
             )
             Text(
                 "✦",
-                modifier = Modifier.padding(start = 3.dp, bottom = 20.dp),
-                fontSize = 15.sp,
+                modifier = Modifier.padding(start = 2.dp, bottom = if (compact) 12.dp else 20.dp),
+                fontSize = if (compact) 10.sp else 15.sp,
                 color = Jaune
             )
         }
         Row(
-            modifier = Modifier.padding(top = 7.dp),
+            modifier = Modifier.padding(top = if (compact) 4.dp else 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 Modifier
-                    .width(25.dp)
-                    .height(4.dp)
+                    .width(if (compact) 16.dp else 25.dp)
+                    .height(if (compact) 3.dp else 4.dp)
                     .background(Vert, CircleShape)
             )
             Spacer(Modifier.width(5.dp))
             Box(
                 Modifier
-                    .width(44.dp)
-                    .height(4.dp)
+                    .width(if (compact) 28.dp else 44.dp)
+                    .height(if (compact) 3.dp else 4.dp)
                     .background(Jaune, CircleShape)
             )
             Spacer(Modifier.width(5.dp))
             Box(
                 Modifier
-                    .width(25.dp)
-                    .height(4.dp)
+                    .width(if (compact) 16.dp else 25.dp)
+                    .height(if (compact) 3.dp else 4.dp)
                     .background(Violet, CircleShape)
             )
         }
@@ -1685,12 +1685,26 @@ private fun DashboardScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // En-tête compact : marque à gauche, profil à droite.
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = { afficherProfil = !afficherProfil }) {
-                    Text("👤 Mon profil", color = Bleu, fontWeight = FontWeight.Bold)
+                BrandLogo(compact = true)
+
+                TextButton(
+                    onClick = { afficherProfil = !afficherProfil },
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        "👤 Mon profil",
+                        color = Bleu,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
                 }
             }
 
@@ -1721,37 +1735,66 @@ private fun DashboardScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            BrandLogo()
             Spacer(Modifier.height(18.dp))
 
-            Text(
-                "Bonjour ${pseudo.ifBlank { "élève" }} !",
-                fontSize = 25.sp,
-                lineHeight = 32.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Bleu,
-                textAlign = TextAlign.Center
-            )
+            // Salutation alignée à gauche, plus proche d'un tableau de bord moderne.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                Text(
+                    "Bonjour ${pseudo.ifBlank { "élève" }} 👋",
+                    fontSize = 25.sp,
+                    lineHeight = 31.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Bleu
+                )
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    "Prêt à apprendre quelque chose de nouveau ?",
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = Texte.copy(alpha = 0.78f)
+                )
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(50.dp),
+                    color = Vert.copy(alpha = 0.10f)
+                ) {
+                    Text(
+                        "🎓  $classe",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        color = Vert,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Prêt à apprendre aujourd'hui ?",
-                fontSize = 16.sp,
-                color = Texte,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(classe, color = Vert, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(26.dp))
 
-            Text(
-                "Mon espace de travail",
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Texte
-            )
-            Spacer(Modifier.height(12.dp))
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Mon espace de travail",
+                        fontSize = 21.sp,
+                        lineHeight = 27.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Texte
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "Tout ce qu'il te faut pour progresser.",
+                        fontSize = 12.sp,
+                        color = Texte.copy(alpha = 0.68f)
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
 
             val rubriques = listOf(
                 Triple("📚", "Mes disciplines", Bleu),
@@ -1766,44 +1809,89 @@ private fun DashboardScreen(
             rubriques.chunked(2).forEach { ligne ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Stretch
                 ) {
                     ligne.forEach { item ->
+                        val description = when (item.second) {
+                            "Mes disciplines" -> "Cours et matières scolaires"
+                            "Mes révisions du jour" -> "Tes objectifs du jour"
+                            "Mon emploi du temps" -> "Organise ta semaine"
+                            "Exercice" -> "Entraîne-toi à ton rythme"
+                            "Boualo" -> "Récite et entraîne ta mémoire"
+                            "Défi du samedi" -> "Relève le défi hebdomadaire"
+                            else -> "Personnalise ton application"
+                        }
+
                         Surface(
                             onClick = { rubrique = item.second },
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(vertical = 5.dp),
-                            shape = RoundedCornerShape(18.dp),
+                            shape = RoundedCornerShape(22.dp),
                             color = Color.White,
-                            border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                            border = BorderStroke(1.dp, Color(0xFFE6EBF5)),
+                            shadowElevation = 2.dp
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .heightIn(min = 158.dp)
                                     .padding(14.dp),
+                                verticalArrangement = Arrangement.SpaceBetween,
                                 horizontalAlignment = Alignment.Start
                             ) {
                                 Surface(
-                                    shape = RoundedCornerShape(13.dp),
+                                    shape = RoundedCornerShape(15.dp),
                                     color = item.third.copy(alpha = 0.12f)
                                 ) {
+                                    Box(
+                                        modifier = Modifier.size(46.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(item.first, fontSize = 24.sp)
+                                    }
+                                }
+
+                                Spacer(Modifier.height(14.dp))
+
+                                Column {
                                     Text(
-                                        item.first,
-                                        modifier = Modifier.padding(10.dp),
-                                        fontSize = 25.sp
+                                        item.second,
+                                        fontSize = 14.sp,
+                                        lineHeight = 19.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Texte
+                                    )
+                                    Spacer(Modifier.height(5.dp))
+                                    Text(
+                                        description,
+                                        fontSize = 11.sp,
+                                        lineHeight = 15.sp,
+                                        color = Texte.copy(alpha = 0.68f)
                                     )
                                 }
+
                                 Spacer(Modifier.height(12.dp))
-                                Text(
-                                    item.second,
-                                    fontSize = 15.sp,
-                                    lineHeight = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Texte
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text("Ouvrir  ›", fontSize = 12.sp, color = item.third)
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Explorer",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = item.third
+                                    )
+                                    Text(
+                                        "›",
+                                        fontSize = 21.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = item.third
+                                    )
+                                }
                             }
                         }
                     }
