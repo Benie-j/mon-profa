@@ -347,7 +347,18 @@ class MainActivity : ComponentActivity() {
                                 "mon_profa", android.content.Context.MODE_PRIVATE
                             ).getString("pseudo", "").orEmpty()
                         },
+                        email = emailInscription,
                         onHome = {
+                            confirmerSortie = false
+                            historique.clear()
+                            historique.add("accueil")
+                        },
+                        onLogout = {
+                            accessToken = null
+                            pseudoUtilisateur = ""
+                            classeChoisie = null
+                            serieChoisie = null
+                            emailInscription = ""
                             historique.clear()
                             historique.add("accueil")
                         }
@@ -1653,209 +1664,226 @@ private fun dashboardGreeting(
 }
 
 
+
 @Composable
 private fun DashboardScreen(
     schoolClass: String,
     series: String,
     pseudo: String,
-    onHome: () -> Unit
+    email: String,
+    onHome: () -> Unit,
+    onLogout: () -> Unit
 ) {
-    var rubrique by remember { mutableStateOf<String?>(null) }
-    var afficherProfil by remember { mutableStateOf(false) }
+    val contexte = androidx.compose.ui.platform.LocalContext.current
+    val pile = remember {
+        mutableStateListOf("dashboard")
+    }
+    val page = pile.last()
+    var confirmerDeconnexion by remember { mutableStateOf(false) }
+    var confirmerQuitter by remember { mutableStateOf(false) }
 
-    if (rubrique != null) {
-        RubriqueMonProfaScreen(
-            titre = rubrique!!,
-            onRetour = { rubrique = null }
-        )
-        return
+    fun ouvrir(destination: String) {
+        if (pile.lastOrNull() != destination) pile.add(destination)
     }
 
-    val classe = if (schoolClass == "Terminale" && series.isNotBlank()) {
-        "Terminale • Série $series"
-    } else {
-        schoolClass.ifBlank { "Classe à préciser" }
+    fun retourPage() {
+        if (pile.size > 1) pile.removeAt(pile.lastIndex)
     }
 
-    AppBackground {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // En-tête compact : marque à gauche, profil à droite.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BrandLogo(compact = true)
+    BackHandler(enabled = pile.size > 1) {
+        retourPage()
+    }
 
-                TextButton(
-                    onClick = { afficherProfil = !afficherProfil },
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text(
-                        "👤 Mon profil",
-                        color = Bleu,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                }
+    if (confirmerQuitter) {
+        AlertDialog(
+            onDismissRequest = { confirmerQuitter = false },
+            title = { Text("Déjà sur le départ ? 💙") },
+            text = {
+                Text("Tu nous quittes déjà ? Reviens-nous vite, nous t'attendons !")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmerQuitter = false
+                    onHome()
+                }) { Text("Quitter", color = Bleu) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    confirmerQuitter = false
+                }) { Text("Rester", color = Vert) }
             }
+        )
+    }
 
-            if (afficherProfil) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    color = Color.White,
-                    border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+    if (confirmerDeconnexion) {
+        AlertDialog(
+            onDismissRequest = { confirmerDeconnexion = false },
+            title = { Text("Se déconnecter ?") },
+            text = {
+                Text("Ta session sera supprimée de cet appareil. Reviens-nous vite ! 💙")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmerDeconnexion = false
+                    SecureSessionStore.clear(contexte)
+                    onLogout()
+                }) { Text("Me déconnecter", color = Bleu) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    confirmerDeconnexion = false
+                }) { Text("Annuler", color = Vert) }
+            }
+        )
+    }
+
+    if (page == "dashboard") {
+        AppBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 3.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.padding(18.dp)) {
-                        Text(
-                            "Mon profil",
-                            fontSize = 21.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Bleu
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text("Pseudo : ${pseudo.ifBlank { "Non renseigné" }}", color = Texte)
-                        Spacer(Modifier.height(8.dp))
-                        Text("Classe : $classe", color = Texte)
-                        Spacer(Modifier.height(12.dp))
-                        TextButton(onClick = { afficherProfil = false }) {
-                            Text("Fermer", color = Bleu)
+                    BrandLogo(compact = true)
+
+                    Surface(
+                        onClick = { ouvrir("Profil") },
+                        shape = CircleShape,
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                    ) {
+                        Box(
+                            modifier = Modifier.size(44.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("👤", fontSize = 22.sp)
                         }
                     }
                 }
-                Spacer(Modifier.height(16.dp))
-            }
 
-            Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(25.dp))
 
-            // Salutation alignée à gauche, plus proche d'un tableau de bord moderne.
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 3.dp)
+                ) {
+                    Text(
+                        dashboardGreeting(contexte, pseudo),
+                        fontSize = 25.sp,
+                        lineHeight = 33.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Bleu
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        listOf(
+                            "Alors, on fait travailler ces neurones ? 🧠",
+                            "Les bonnes notes ne vont pas se gagner toutes seules ! 😉",
+                            "Prêt à montrer ce que tu sais faire ? 🚀",
+                            "Aujourd'hui encore, on devient plus fort ! 💪",
+                            "Allez, on apprend un petit quelque chose ? 📚"
+                        ).let { phrases ->
+                            val jour = java.util.Calendar.getInstance()
+                                .get(java.util.Calendar.DAY_OF_YEAR)
+                            phrases[jour % phrases.size]
+                        },
+                        fontSize = 14.sp,
+                        lineHeight = 21.sp,
+                        color = Texte.copy(alpha = 0.76f)
+                    )
+                }
+
+                Spacer(Modifier.height(28.dp))
+
                 Text(
-                    "Bonjour ${pseudo.ifBlank { "élève" }} 👋",
-                    fontSize = 25.sp,
-                    lineHeight = 31.sp,
+                    "Ton espace de travail",
+                    fontSize = 21.sp,
+                    lineHeight = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Bleu
+                    color = Texte
                 )
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "Prêt à apprendre quelque chose de nouveau ?",
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    color = Texte.copy(alpha = 0.78f)
+                    "Choisis ce que tu veux faire aujourd'hui.",
+                    fontSize = 13.sp,
+                    color = Texte.copy(alpha = 0.70f)
                 )
-                Spacer(Modifier.height(12.dp))
-                Surface(
-                    shape = RoundedCornerShape(50.dp),
-                    color = Vert.copy(alpha = 0.10f)
-                ) {
-                    Text(
-                        "🎓  $classe",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                        color = Vert,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                Spacer(Modifier.height(15.dp))
 
-            Spacer(Modifier.height(26.dp))
+                val rubriques = listOf(
+                    Triple("📚", "Mes disciplines", Bleu),
+                    Triple("🗓️", "Mes cours du jour", Vert),
+                    Triple("🏆", "Le challenge", Violet),
+                    Triple("✍️", "Exercice", Color(0xFFE59A18)),
+                    Triple("🎙️", "Faire un boualo", Violet),
+                    Triple("📅", "Mon emploi du temps", Vert),
+                    Triple("⚙️", "Paramètre", Color(0xFF64748B)),
+                    Triple("❔", "Aide", BleuClair),
+                    Triple("🛠️", "Signaler un problème", Color(0xFFD45A55))
+                )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Mon espace de travail",
-                        fontSize = 21.sp,
-                        lineHeight = 27.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Texte
-                    )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        "Tout ce qu'il te faut pour progresser.",
-                        fontSize = 12.sp,
-                        color = Texte.copy(alpha = 0.68f)
-                    )
-                }
-            }
-            Spacer(Modifier.height(10.dp))
+                rubriques.chunked(2).forEach { ligne ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        ligne.forEach { item ->
+                            val description = when (item.second) {
+                                "Mes disciplines" -> "Tes matières et tes leçons"
+                                "Mes cours du jour" -> "Ce que tu dois étudier"
+                                "Le challenge" -> "Teste tes connaissances"
+                                "Exercice" -> "Entraîne-toi à ton rythme"
+                                "Faire un boualo" -> "Récite et mémorise tes cours"
+                                "Mon emploi du temps" -> "Organise ta semaine"
+                                "Paramètre" -> "Personnalise ton application"
+                                "Aide" -> "Trouve des réponses à tes questions"
+                                else -> "Besoin de nous signaler quelque chose ?"
+                            }
 
-            val rubriques = listOf(
-                Triple("📚", "Mes disciplines", Bleu),
-                Triple("🎯", "Mes révisions du jour", Vert),
-                Triple("🗓️", "Mon emploi du temps", Violet),
-                Triple("✍️", "Exercice", Color(0xFFE59A18)),
-                Triple("🎙️", "Boualo", Violet),
-                Triple("🏆", "Défi du samedi", Vert),
-                Triple("⚙️", "Paramètre", Color(0xFF64748B))
-            )
-
-            rubriques.chunked(2).forEach { ligne ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    ligne.forEach { item ->
-                        val description = when (item.second) {
-                            "Mes disciplines" -> "Cours et matières scolaires"
-                            "Mes révisions du jour" -> "Tes objectifs du jour"
-                            "Mon emploi du temps" -> "Organise ta semaine"
-                            "Exercice" -> "Entraîne-toi à ton rythme"
-                            "Boualo" -> "Récite et entraîne ta mémoire"
-                            "Défi du samedi" -> "Relève le défi hebdomadaire"
-                            else -> "Personnalise ton application"
-                        }
-
-                        Surface(
-                            onClick = { rubrique = item.second },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(vertical = 5.dp),
-                            shape = RoundedCornerShape(22.dp),
-                            color = Color.White,
-                            border = BorderStroke(1.dp, Color(0xFFE6EBF5)),
-                            shadowElevation = 2.dp
-                        ) {
-                            Column(
+                            Surface(
+                                onClick = {
+                                    ouvrir(item.second)
+                                },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 158.dp)
-                                    .padding(14.dp),
-                                verticalArrangement = Arrangement.SpaceBetween,
-                                horizontalAlignment = Alignment.Start
+                                    .weight(1f)
+                                    .padding(bottom = 10.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White,
+                                border = BorderStroke(
+                                    1.dp, Color(0xFFE4EAF5)
+                                ),
+                                shadowElevation = 1.dp
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(15.dp),
-                                    color = item.third.copy(alpha = 0.12f)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 145.dp)
+                                        .padding(13.dp),
+                                    verticalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Box(
-                                        modifier = Modifier.size(46.dp),
-                                        contentAlignment = Alignment.Center
+                                    Surface(
+                                        shape = RoundedCornerShape(13.dp),
+                                        color = item.third.copy(alpha = 0.12f)
                                     ) {
-                                        Text(item.first, fontSize = 24.sp)
+                                        Box(
+                                            modifier = Modifier.size(43.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(item.first, fontSize = 23.sp)
+                                        }
                                     }
-                                }
 
-                                Spacer(Modifier.height(14.dp))
-
-                                Column {
+                                    Spacer(Modifier.height(13.dp))
                                     Text(
                                         item.second,
                                         fontSize = 14.sp,
@@ -1870,47 +1898,291 @@ private fun DashboardScreen(
                                         lineHeight = 15.sp,
                                         color = Texte.copy(alpha = 0.68f)
                                     )
-                                }
-
-                                Spacer(Modifier.height(12.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        "Explorer",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = item.third
-                                    )
-                                    Text(
-                                        "›",
-                                        fontSize = 21.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = item.third
-                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Explorer",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = item.third
+                                        )
+                                        Text(
+                                            "›",
+                                            fontSize = 21.sp,
+                                            color = item.third
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (ligne.size == 1) {
-                        Spacer(Modifier.weight(1f))
+                        if (ligne.size == 1) {
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(18.dp))
-            Text(
-                "Avance à ton rythme, une leçon après l'autre.",
-                fontSize = 13.sp,
-                color = Texte.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Chaque petite révision te rapproche de ton objectif. ✨",
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 12.sp,
+                    lineHeight = 19.sp,
+                    textAlign = TextAlign.Center,
+                    color = Texte.copy(alpha = 0.68f)
+                )
+                Spacer(Modifier.height(18.dp))
+            }
         }
+    } else {
+        AppBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { retourPage() }) {
+                        Text("‹ Retour", color = Bleu)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    BrandLogo(compact = true)
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                when (page) {
+                    "Profil" -> {
+                        Text(
+                            "Mon profil 👤",
+                            fontSize = 27.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Bleu
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Tes informations personnelles",
+                            fontSize = 14.sp,
+                            color = Texte.copy(alpha = 0.7f)
+                        )
+                        Spacer(Modifier.height(20.dp))
+
+                        CarteProfil("Pseudo", pseudo.ifBlank { "Non renseigné" })
+                        CarteProfil("Adresse e-mail", email.ifBlank {
+                            "Adresse à vérifier"
+                        })
+                        CarteProfil(
+                            "Niveau scolaire",
+                            schoolClass.ifBlank { "Non renseigné" }
+                        )
+                        if (series.isNotBlank()) {
+                            CarteProfil("Série", series)
+                        }
+
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            "La modification du pseudo, de l'adresse e-mail et du mot de passe sera activée dans la prochaine étape avec vérification sécurisée.",
+                            fontSize = 13.sp,
+                            lineHeight = 20.sp,
+                            color = Texte.copy(alpha = 0.72f)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { ouvrir("Modifier mes informations") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Gérer mes informations")
+                        }
+                    }
+
+                    "Paramètre" -> {
+                        Text(
+                            "Paramètres ⚙️",
+                            fontSize = 27.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Bleu
+                        )
+                        Spacer(Modifier.height(7.dp))
+                        Text(
+                            "Configure Mon profa selon tes besoins.",
+                            fontSize = 14.sp,
+                            color = Texte.copy(alpha = 0.72f)
+                        )
+                        Spacer(Modifier.height(20.dp))
+
+                        listOf(
+                            "Profil" to "Tes informations personnelles",
+                            "Thème" to "Apparence de l'application",
+                            "Conditions d'utilisation" to "Les règles d'utilisation",
+                            "Confidentialité" to "Protection de tes données",
+                            "Notifications" to "Préférences de notification",
+                            "Version de l'application" to
+                                "Informations sur cette version"
+                        ).forEach { (titre, sousTitre) ->
+                            LigneParametre(
+                                titre = titre,
+                                description = sousTitre,
+                                onClick = {
+                                    if (titre == "Profil") ouvrir("Profil")
+                                    else ouvrir(titre)
+                                }
+                            )
+                        }
+
+                        Spacer(Modifier.height(18.dp))
+                        OutlinedButton(
+                            onClick = { confirmerDeconnexion = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFFC43D4B)
+                            )
+                        ) {
+                            Text("Se déconnecter")
+                        }
+                    }
+
+                    "Modifier mes informations" -> {
+                        PageInformation(
+                            titre = "Gérer mes informations",
+                            texte = "La modification sécurisée des identifiants sera ajoutée dans la prochaine étape. Aucun changement n'est effectué pour le moment."
+                        )
+                    }
+
+                    "Thème" -> PageInformation(
+                        "Thème",
+                        "Le choix du thème sera activé dans une prochaine mise à jour."
+                    )
+
+                    "Conditions d'utilisation" -> PageInformation(
+                        "Conditions d'utilisation",
+                        "Les conditions d'utilisation seront présentées ici après validation de leur texte officiel."
+                    )
+
+                    "Confidentialité" -> PageInformation(
+                        "Confidentialité",
+                        "Cette page présentera les données utilisées par Mon profa, leur traitement et les droits de l'utilisateur."
+                    )
+
+                    "Notifications" -> PageInformation(
+                        "Notifications",
+                        "Les préférences de notification seront disponibles ici lorsque les notifications seront configurées."
+                    )
+
+                    "Version de l'application" -> PageInformation(
+                        "Version de l'application",
+                        "Version ${runCatching { ci.monprofa.app.BuildConfig.VERSION_NAME }.getOrDefault("non renseignée")}"
+                    )
+
+                    else -> {
+                        RubriqueMonProfaScreen(
+                            titre = page,
+                            onRetour = { retourPage() }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CarteProfil(titre: String, valeur: String) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+        shape = RoundedCornerShape(17.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                titre,
+                fontSize = 12.sp,
+                color = Texte.copy(alpha = 0.65f)
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                valeur,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Texte
+            )
+        }
+    }
+}
+
+@Composable
+private fun LigneParametre(
+    titre: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 9.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFE4EAF5))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    titre,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Texte
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    description,
+                    fontSize = 12.sp,
+                    color = Texte.copy(alpha = 0.68f)
+                )
+            }
+            Text("›", fontSize = 25.sp, color = Bleu)
+        }
+    }
+}
+
+@Composable
+private fun PageInformation(titre: String, texte: String) {
+    Text(
+        titre,
+        fontSize = 26.sp,
+        lineHeight = 32.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color = Bleu
+    )
+    Spacer(Modifier.height(16.dp))
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+    ) {
+        Text(
+            texte,
+            modifier = Modifier.padding(19.dp),
+            fontSize = 15.sp,
+            lineHeight = 24.sp,
+            color = Texte
+        )
     }
 }
 
