@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
 
                 var classeChoisie by remember { mutableStateOf<String?>(null) }
                 var serieChoisie by remember { mutableStateOf<String?>(null) }
+                var emailInscription by remember { mutableStateOf("") }
 
                 val pageActuelle = historique.last()
 
@@ -101,6 +102,25 @@ class MainActivity : ComponentActivity() {
                         },
                         onLogin = {
                             historique.add("connexion")
+                        },
+                        onContinueVerification = { email ->
+                            emailInscription = email
+                            historique.add("verification")
+                        }
+                    )
+
+                    "verification" -> EmailVerificationScreen(
+                        email = emailInscription,
+                        onBack = { historique.removeAt(historique.lastIndex) },
+                        onContinue = { historique.add("dashboard") }
+                    )
+
+                    "dashboard" -> DashboardScreen(
+                        schoolClass = classeChoisie.orEmpty(),
+                        series = serieChoisie.orEmpty(),
+                        onHome = {
+                            historique.clear()
+                            historique.add("accueil")
                         }
                     )
 
@@ -741,7 +761,8 @@ private fun RegistrationScreen(
     schoolClass: String,
     series: String,
     onBack: () -> Unit,
-    onLogin: () -> Unit
+    onLogin: () -> Unit,
+    onContinueVerification: (String) -> Unit
 ) {
     var pseudo by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -906,10 +927,7 @@ private fun RegistrationScreen(
             PrimaryButton(
                 text = "Créer mon compte",
                 enabled = formulaireValide,
-                onClick = {
-                    message =
-                        "Les informations sont valides. La création réelle du compte sera activée lorsque le système d'authentification sera connecté."
-                }
+                onClick = { onContinueVerification(email.trim()) }
             )
 
             Spacer(Modifier.height(12.dp))
@@ -1115,6 +1133,269 @@ private fun LoginScreen(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun EmailVerificationScreen(
+    email: String,
+    onBack: () -> Unit,
+    onContinue: () -> Unit
+) {
+    var code by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+
+    AppBackground {
+        Column(
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 26.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            BrandLogo()
+
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                TextButton(onClick = onBack) {
+                    Text("‹ Retour", color = Bleu)
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+            Text("✉️", fontSize = 42.sp)
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                "Nous y sommes presque !",
+                fontSize = 27.sp,
+                lineHeight = 34.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Bleu,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Renseigne le code reçu par mail et on bouge. 😉",
+                fontSize = 15.sp,
+                lineHeight = 23.sp,
+                color = Texte.copy(alpha = .78f),
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(email, color = Vert, fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center)
+
+            Spacer(Modifier.height(24.dp))
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+            ) {
+                Column(
+                    Modifier.padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Ton code à 6 chiffres",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Texte
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Saisis les six chiffres pour continuer.",
+                        fontSize = 13.sp,
+                        color = Texte.copy(alpha = .7f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = code,
+                        onValueChange = {
+                            code = it.filter(Char::isDigit).take(6)
+                            message = ""
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("Code de vérification") },
+                        placeholder = { Text("123456") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        ),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Bleu,
+                            unfocusedBorderColor = Color(0xFFD9E2F2),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedTextColor = Texte,
+                            unfocusedTextColor = Texte,
+                            cursorColor = Bleu
+                        )
+                    )
+
+                    Spacer(Modifier.height(18.dp))
+                    PrimaryButton(
+                        text = "C'est parti ! →",
+                        enabled = code.length == 6,
+                        onClick = onContinue
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "Tu n'as rien reçu ? Renvoyer le code",
+                        modifier = Modifier.clickable {
+                            message = "Le renvoi du code sera disponible après le branchement du système d'authentification."
+                        }.padding(vertical = 10.dp),
+                        color = Bleu,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+
+                    if (message.isNotEmpty()) {
+                        Text(
+                            message,
+                            color = Texte.copy(alpha = .75f),
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Mode aperçu : le code n'est pas encore vérifié par un serveur.",
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp,
+                        color = Texte.copy(alpha = .58f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Spacer(Modifier.height(22.dp))
+        }
+    }
+}
+
+@Composable
+private fun DashboardScreen(
+    schoolClass: String,
+    series: String,
+    onHome: () -> Unit
+) {
+    val classe = if (schoolClass == "Terminale" && series.isNotBlank()) {
+        "Terminale • Série $series"
+    } else {
+        schoolClass.ifBlank { "Classe à préciser" }
+    }
+
+    AppBackground {
+        Column(
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            BrandLogo()
+            Spacer(Modifier.height(24.dp))
+
+            Text(
+                "Salut, champion(ne) ! 👋",
+                fontSize = 26.sp,
+                lineHeight = 33.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Bleu,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Prêt(e) à faire des progrès aujourd'hui ?",
+                fontSize = 15.sp,
+                color = Texte.copy(alpha = .75f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(22.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+            ) {
+                Column(Modifier.padding(18.dp)) {
+                    Text(
+                        "Mon espace d'apprentissage",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Texte
+                    )
+                    Spacer(Modifier.height(7.dp))
+                    Text(classe, color = Vert, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            DashboardTile("📚", "Mes cours",
+                "Retrouve tes cours et les notions à apprendre.", Bleu)
+            Spacer(Modifier.height(12.dp))
+            DashboardTile("✍️", "Mes exercices",
+                "Entraîne-toi pour mieux comprendre.", Vert)
+            Spacer(Modifier.height(12.dp))
+            DashboardTile("📈", "Ma progression",
+                "Suis tes progrès au fil de tes révisions.", Violet)
+
+            Spacer(Modifier.height(18.dp))
+            Text(
+                "Ces espaces sont en préparation. Leur contenu sera ajouté progressivement.",
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
+                color = Texte.copy(alpha = .65f),
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(20.dp))
+            PrimaryButton("Retour à l'accueil", onClick = onHome)
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun DashboardTile(
+    emoji: String,
+    title: String,
+    description: String,
+    accent: Color
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+    ) {
+        Row(
+            Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = accent.copy(alpha = .10f)
+            ) {
+                Text(emoji, modifier = Modifier.padding(13.dp), fontSize = 24.sp)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold, color = Texte)
+                Spacer(Modifier.height(4.dp))
+                Text(description, fontSize = 13.sp,
+                    lineHeight = 19.sp, color = Texte.copy(alpha = .72f))
             }
         }
     }
