@@ -59,6 +59,8 @@ class MainActivity : ComponentActivity() {
                 var classeChoisie by remember { mutableStateOf<String?>(null) }
                 var serieChoisie by remember { mutableStateOf<String?>(null) }
                 var emailInscription by remember { mutableStateOf("") }
+                var pseudoUtilisateur by remember { mutableStateOf("") }
+                val contexteApp = androidx.compose.ui.platform.LocalContext.current
 
                 val pageActuelle = historique.last()
 
@@ -103,8 +105,12 @@ class MainActivity : ComponentActivity() {
                         onLogin = {
                             historique.add("connexion")
                         },
-                        onContinueVerification = { email ->
+                        onContinueVerification = { email, pseudo ->
                             emailInscription = email
+                            pseudoUtilisateur = pseudo.trim()
+                            contexteApp.getSharedPreferences(
+                                "mon_profa", android.content.Context.MODE_PRIVATE
+                            ).edit().putString("pseudo", pseudoUtilisateur).apply()
                             historique.add("verification")
                         }
                     )
@@ -118,6 +124,11 @@ class MainActivity : ComponentActivity() {
                     "dashboard" -> DashboardScreen(
                         schoolClass = classeChoisie.orEmpty(),
                         series = serieChoisie.orEmpty(),
+                        pseudo = pseudoUtilisateur.ifBlank {
+                            contexteApp.getSharedPreferences(
+                                "mon_profa", android.content.Context.MODE_PRIVATE
+                            ).getString("pseudo", "").orEmpty()
+                        },
                         onHome = {
                             historique.clear()
                             historique.add("accueil")
@@ -762,7 +773,7 @@ private fun RegistrationScreen(
     series: String,
     onBack: () -> Unit,
     onLogin: () -> Unit,
-    onContinueVerification: (String) -> Unit
+    onContinueVerification: (String, String) -> Unit
 ) {
     var pseudo by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -927,7 +938,7 @@ private fun RegistrationScreen(
             PrimaryButton(
                 text = "Créer mon compte",
                 enabled = formulaireValide,
-                onClick = { onContinueVerification(email.trim()) }
+                onClick = { onContinueVerification(email.trim(), pseudo.trim()) }
             )
 
             Spacer(Modifier.height(12.dp))
@@ -1284,12 +1295,69 @@ private fun EmailVerificationScreen(
     }
 }
 
+private fun dashboardGreeting(
+    context: android.content.Context,
+    pseudo: String
+): String {
+    val calendrier = java.util.Calendar.getInstance()
+    val heure = calendrier.get(java.util.Calendar.HOUR_OF_DAY)
+
+    val periode = when {
+        heure < 12 -> "matin"
+        heure < 18 -> "apres_midi"
+        else -> "soir"
+    }
+
+    val dateKey = "salutation_${calendrier.get(java.util.Calendar.YEAR)}_" +
+        "${calendrier.get(java.util.Calendar.DAY_OF_YEAR)}_$periode"
+
+    val preferences = context.getSharedPreferences(
+        "mon_profa_salutations",
+        android.content.Context.MODE_PRIVATE
+    )
+    val visite = preferences.getInt(dateKey, 0)
+    preferences.edit().putInt(dateKey, visite + 1).apply()
+
+    val nom = pseudo.trim().ifBlank { "à toi" }
+
+    val salutations = when (periode) {
+        "matin" -> listOf(
+            "Bonjour, $nom ☀️",
+            "C'est comment, $nom ? 👋",
+            "On révise quoi, $nom ? 📚",
+            "Content de te revoir, $nom ! 💙",
+            "Prêt(e) à progresser, $nom ? 💪"
+        )
+        "apres_midi" -> listOf(
+            "Bon après-midi, $nom ! ☀️",
+            "Alors, $nom, on avance ? 📚",
+            "Tu es prêt(e), $nom ? 💪",
+            "Heureux de te revoir, $nom ! 💙",
+            "On continue les révisions, $nom ? ✍️"
+        )
+        else -> listOf(
+            "Bonsoir, $nom ! 🌙",
+            "Tu m'as manqué, $nom ! 💙",
+            "Une dernière révision, $nom ? 📚",
+            "Bonsoir et bienvenue, $nom ! ✨",
+            "On termine la journée en apprenant, $nom ? 🌟"
+        )
+    }
+
+    return salutations[visite % salutations.size]
+}
+
 @Composable
 private fun DashboardScreen(
     schoolClass: String,
     series: String,
+    pseudo: String,
     onHome: () -> Unit
 ) {
+    val contexte = androidx.compose.ui.platform.LocalContext.current
+    val salutation = remember(pseudo) {
+        dashboardGreeting(contexte, pseudo)
+    }
     val classe = if (schoolClass == "Terminale" && series.isNotBlank()) {
         "Terminale • Série $series"
     } else {
@@ -1307,7 +1375,7 @@ private fun DashboardScreen(
             Spacer(Modifier.height(24.dp))
 
             Text(
-                "Salut, champion(ne) ! 👋",
+                salutation,
                 fontSize = 26.sp,
                 lineHeight = 33.sp,
                 fontWeight = FontWeight.ExtraBold,
