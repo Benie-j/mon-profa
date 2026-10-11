@@ -1465,6 +1465,7 @@ private fun dashboardGreeting(
     return salutations[visite % salutations.size]
 }
 
+
 @Composable
 private fun DashboardScreen(
     schoolClass: String,
@@ -1472,10 +1473,17 @@ private fun DashboardScreen(
     pseudo: String,
     onHome: () -> Unit
 ) {
-    val contexte = androidx.compose.ui.platform.LocalContext.current
-    val salutation = remember(pseudo) {
-        dashboardGreeting(contexte, pseudo)
+    var rubrique by remember { mutableStateOf<String?>(null) }
+    var afficherProfil by remember { mutableStateOf(false) }
+
+    if (rubrique != null) {
+        RubriqueMonProfaScreen(
+            titre = rubrique!!,
+            onRetour = { rubrique = null }
+        )
+        return
     }
+
     val classe = if (schoolClass == "Terminale" && series.isNotBlank()) {
         "Terminale • Série $series"
     } else {
@@ -1484,131 +1492,189 @@ private fun DashboardScreen(
 
     AppBackground {
         Column(
-            Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 28.dp),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = { afficherProfil = !afficherProfil }) {
+                    Text("👤 Mon profil", color = Bleu, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            if (afficherProfil) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                ) {
+                    Column(Modifier.padding(18.dp)) {
+                        Text(
+                            "Mon profil",
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Bleu
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text("Pseudo : ${pseudo.ifBlank { "Non renseigné" }}", color = Texte)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Classe : $classe", color = Texte)
+                        Spacer(Modifier.height(12.dp))
+                        TextButton(onClick = { afficherProfil = false }) {
+                            Text("Fermer", color = Bleu)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
             BrandLogo()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(18.dp))
 
             Text(
-                salutation,
-                fontSize = 26.sp,
-                lineHeight = 33.sp,
+                "Bonjour ${pseudo.ifBlank { "élève" }} !",
+                fontSize = 25.sp,
+                lineHeight = 32.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Bleu,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(8.dp))
+
+            Spacer(Modifier.height(6.dp))
             Text(
-                "Prêt(e) à faire des progrès aujourd'hui ?",
-                fontSize = 15.sp,
-                color = Texte.copy(alpha = .75f),
+                "Prêt à apprendre aujourd'hui ?",
+                fontSize = 16.sp,
+                color = Texte,
                 textAlign = TextAlign.Center
             )
+            Spacer(Modifier.height(8.dp))
+            Text(classe, color = Vert, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(24.dp))
 
-            Spacer(Modifier.height(22.dp))
-            Surface(
+            Text(
+                "Mon espace de travail",
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFE2E9F5))
-            ) {
-                Column(Modifier.padding(18.dp)) {
-                    Text(
-                        "Mon espace d'apprentissage",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Texte
-                    )
-                    Spacer(Modifier.height(7.dp))
-                    Text(classe, color = Vert, fontWeight = FontWeight.SemiBold)
-                }
-            }
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Texte
+            )
+            Spacer(Modifier.height(12.dp))
 
-            Spacer(Modifier.height(14.dp))
-            androidx.compose.foundation.layout.FlowRow(
-                maxItemsInEachRow = 2,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val largeurModule = (LocalConfiguration.current.screenWidthDp.dp - 56.dp) / 2
+            val rubriques = listOf(
+                Triple("📚", "Mes disciplines", Bleu),
+                Triple("🎯", "Mes révisions du jour", Vert),
+                Triple("🗓️", "Mon emploi du temps", Violet),
+                Triple("✍️", "Exercice", Color(0xFFE59A18)),
+                Triple("⚙️", "Paramètre", Color(0xFF64748B))
+            )
 
-                Box(modifier = Modifier.width(largeurModule)) {
-                    DashboardTile(
-                        emoji = "📚",
-                        title = "Mes cours",
-                        description = "Retrouve tes cours et les notions à apprendre.",
-                        accent = Bleu
-                    )
-                }
-
-                Box(modifier = Modifier.width(largeurModule)) {
-                    DashboardTile(
-                        emoji = "✍️",
-                        title = "Mes exercices",
-                        description = "Entraîne-toi pour mieux comprendre.",
-                        accent = Vert
-                    )
-                }
-
-                Box(modifier = Modifier.width(largeurModule)) {
-                    DashboardTile(
-                        emoji = "📈",
-                        title = "Ma progression",
-                        description = "Suis tes progrès au fil de tes révisions.",
-                        accent = Violet
-                    )
+            rubriques.forEach { item ->
+                Surface(
+                    onClick = { rubrique = item.second },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(17.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(13.dp),
+                            color = item.third.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                item.first,
+                                modifier = Modifier.padding(12.dp),
+                                fontSize = 25.sp
+                            )
+                        }
+                        Spacer(Modifier.width(15.dp))
+                        Text(
+                            item.second,
+                            modifier = Modifier.weight(1f),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Texte
+                        )
+                        Text("›", fontSize = 27.sp, color = item.third)
+                    }
                 }
             }
 
             Spacer(Modifier.height(18.dp))
             Text(
-                "Ces espaces sont en préparation. Leur contenu sera ajouté progressivement.",
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-                color = Texte.copy(alpha = .65f),
+                "Avance à ton rythme, une leçon après l'autre.",
+                fontSize = 13.sp,
+                color = Texte.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(20.dp))
-            PrimaryButton("Retour à l'accueil", onClick = onHome)
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-private fun DashboardTile(
-    emoji: String,
-    title: String,
-    description: String,
-    accent: Color
+private fun RubriqueMonProfaScreen(
+    titre: String,
+    onRetour: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, Color(0xFFE2E9F5))
-    ) {
-        Row(
-            Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+    val description = when (titre) {
+        "Mes disciplines" ->
+            "Retrouve ici tes matières scolaires et les contenus de cours."
+        "Mes révisions du jour" ->
+            "Organise tes révisions quotidiennes et suis les notions à revoir."
+        "Mon emploi du temps" ->
+            "Retrouve ici ton planning de cours et tes séances de révision."
+        "Exercice" ->
+            "Cet espace accueillera les exercices pour t'entraîner."
+        "Paramètre" ->
+            "Les options de ton application seront regroupées dans cet espace."
+        else -> ""
+    }
+
+    AppBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(22.dp)
         ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = accent.copy(alpha = .10f)
-            ) {
-                Text(emoji, modifier = Modifier.padding(13.dp), fontSize = 24.sp)
+            TextButton(onClick = onRetour) {
+                Text("‹ Retour au tableau de bord", color = Bleu)
             }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold, color = Texte)
-                Spacer(Modifier.height(4.dp))
-                Text(description, fontSize = 13.sp,
-                    lineHeight = 19.sp, color = Texte.copy(alpha = .72f))
+
+            Spacer(Modifier.height(24.dp))
+            Text(
+                titre,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Bleu
+            )
+            Spacer(Modifier.height(14.dp))
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+            ) {
+                Text(
+                    description,
+                    modifier = Modifier.padding(20.dp),
+                    fontSize = 16.sp,
+                    lineHeight = 25.sp,
+                    color = Texte
+                )
             }
         }
     }
