@@ -142,7 +142,12 @@ object SupabaseBackend {
             )
         val userId = response.optString("user_id").takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Identifiant du compte absent.")
-        return AuthResult(token, userId)
+        return AuthResult(
+            accessToken = token,
+            userId = userId,
+            refreshToken = response.optString("refresh_token")
+                .takeIf { it.isNotBlank() }
+        )
     }
 
     suspend fun getProfile(accessToken: String, userId: String): StudentProfile {

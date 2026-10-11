@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 // La pile mémorise le parcours réel de l'utilisateur.
                 val historique = remember {
-                    mutableStateListOf("accueil")
+                    mutableStateListOf("restauration")
                 }
 
                 var classeChoisie by remember { mutableStateOf<String?>(null) }
@@ -66,14 +66,156 @@ class MainActivity : ComponentActivity() {
                 var accessToken by remember { mutableStateOf<String?>(null) }
                 val contexteApp = androidx.compose.ui.platform.LocalContext.current
 
+
+                // Restaure la session sans demander les identifiants à chaque ouverture.
+                LaunchedEffect(Unit) {
+                    val saved = SecureSessionStore.load(contexteApp)
+                    if (saved == null) {
+                        historique.clear()
+                        historique.add("accueil")
+                    } else {
+                        fun afficherSession(
+                            token: String,
+                            pseudo: String,
+                            schoolClass: String,
+                            series: String
+                        ) {
+                            accessToken = token
+                            pseudoUtilisateur = pseudo
+                            classeChoisie = schoolClass
+                            serieChoisie = series
+                            contexteApp.getSharedPreferences(
+                                "mon_profa", android.content.Context.MODE_PRIVATE
+                            ).edit().putString("pseudo", pseudo).apply()
+                            historique.clear()
+                            historique.add("dashboard")
+                        }
+
+                        fun estErreurReseau(e: Exception): Boolean {
+                            val message = e.message.orEmpty().lowercase()
+                            return listOf(
+                                "pas de connexion internet",
+                                "vérifie ton réseau",
+                                "trop de temps",
+                                "timeout",
+                                "unable to resolve host",
+                                "network is unreachable",
+                                "connection refused",
+                                "failed to connect"
+                            ).any { it in message }
+                        }
+
+                        try {
+                            val refreshed = try {
+                                SupabaseBackend.refreshSession(saved.refreshToken)
+                            } catch (e: Exception) {
+                                if (estErreurReseau(e)) {
+                                    afficherSession(
+                                        saved.accessToken, saved.pseudo,
+                                        saved.schoolClass, saved.series
+                                    )
+                                    return@LaunchedEffect
+                                }
+                                throw e
+                            }
+
+                            val token = refreshed.accessToken
+                                ?: throw IllegalStateException("Session à renouveler.")
+                            val userId = refreshed.userId
+                                ?: saved.userId
+                            val newRefresh = refreshed.refreshToken
+                                ?: saved.refreshToken
+
+                            val profile = try {
+                                SupabaseBackend.getProfile(token, userId)
+                            } catch (e: Exception) {
+                                if (estErreurReseau(e)) {
+                                    SecureSessionStore.save(
+                                        contexteApp,
+                                        saved.copy(
+                                            accessToken = token,
+                                            refreshToken = newRefresh,
+                                            userId = userId
+                                        )
+                                    )
+                                    afficherSession(
+                                        token, saved.pseudo,
+                                        saved.schoolClass, saved.series
+                                    )
+                                    return@LaunchedEffect
+                                }
+                                throw e
+                            }
+
+                            SecureSessionStore.save(
+                                contexteApp,
+                                SecureSessionStore.Session(
+                                    accessToken = token,
+                                    refreshToken = newRefresh,
+                                    userId = userId,
+                                    pseudo = profile.pseudo,
+                                    schoolClass = profile.schoolClass,
+                                    series = profile.series.orEmpty()
+                                )
+                            )
+                            afficherSession(
+                                token, profile.pseudo,
+                                profile.schoolClass, profile.series.orEmpty()
+                            )
+                        } catch (_: Exception) {
+                            // Session refusée par Supabase : demander une nouvelle connexion.
+                            SecureSessionStore.clear(contexteApp)
+                            historique.clear()
+                            historique.add("accueil")
+                        }
+                    }
+                }
+
                 val pageActuelle = historique.last()
 
-                // Retour Android et geste Retour.
-                BackHandler(enabled = historique.size > 1) {
-                    historique.removeAt(historique.lastIndex)
+                var confirmerSortie by remember { mutableStateOf(false) }
+
+                // Retour Android : confirmation depuis le tableau de bord.
+                BackHandler(enabled = true) {
+                    if (pageActuelle == "dashboard") {
+                        confirmerSortie = true
+                    } else if (historique.size > 1) {
+                        historique.removeAt(historique.lastIndex)
+                    }
+                }
+
+                if (confirmerSortie) {
+                    AlertDialog(
+                        onDismissRequest = { confirmerSortie = false },
+                        title = { Text("Quitter Mon profa ?") },
+                        text = {
+                            Text("Veux-tu vraiment quitter l'application ? Ta session reste enregistrée.")
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { this@MainActivity.finish() }) {
+                                Text("Quitter", color = Bleu)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { confirmerSortie = false }) {
+                                Text("Annuler", color = Vert)
+                            }
+                        }
+                    )
                 }
 
                 when (pageActuelle) {
+                    "restauration" -> Box(
+                        modifier = Modifier.fillMaxSize().background(Fond),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Bleu)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Vérification de ta session…", color = Texte)
+                        }
+                    }
+
                     "accueil" -> WelcomeScreen(
                         onStart = {
                             historique.add("classe")
@@ -128,6 +270,21 @@ class MainActivity : ComponentActivity() {
 
                                 if (!result.accessToken.isNullOrBlank()) {
                                     accessToken = result.accessToken
+                                    if (!result.refreshToken.isNullOrBlank() &&
+                                        !result.userId.isNullOrBlank()
+                                    ) {
+                                        SecureSessionStore.save(
+                                            contexteApp,
+                                            SecureSessionStore.Session(
+                                                accessToken = result.accessToken,
+                                                refreshToken = result.refreshToken,
+                                                userId = result.userId,
+                                                pseudo = pseudoUtilisateur,
+                                                schoolClass = schoolClass,
+                                                series = series
+                                            )
+                                        )
+                                    }
                                     historique.add("dashboard")
                                 } else {
                                     historique.add("verification")
@@ -151,6 +308,21 @@ class MainActivity : ComponentActivity() {
                                     ?: throw IllegalStateException(
                                         "Confirmation reçue. Connecte-toi pour continuer."
                                     )
+                                if (!result.refreshToken.isNullOrBlank() &&
+                                    !result.userId.isNullOrBlank()
+                                ) {
+                                    SecureSessionStore.save(
+                                        contexteApp,
+                                        SecureSessionStore.Session(
+                                            accessToken = result.accessToken,
+                                            refreshToken = result.refreshToken,
+                                            userId = result.userId,
+                                            pseudo = pseudoUtilisateur,
+                                            schoolClass = classeChoisie.orEmpty(),
+                                            series = serieChoisie.orEmpty()
+                                        )
+                                    )
+                                }
                                 historique.add("dashboard")
                                 null
                             } catch (e: Exception) {
@@ -207,6 +379,21 @@ class MainActivity : ComponentActivity() {
                                 contexteApp.getSharedPreferences(
                                     "mon_profa", android.content.Context.MODE_PRIVATE
                                 ).edit().putString("pseudo", profile.pseudo).apply()
+                                val refresh = result.refreshToken
+                                    ?: throw IllegalStateException(
+                                        "Supabase n'a pas fourni le jeton de renouvellement. Réessaie."
+                                    )
+                                SecureSessionStore.save(
+                                    contexteApp,
+                                    SecureSessionStore.Session(
+                                        accessToken = token,
+                                        refreshToken = refresh,
+                                        userId = userId,
+                                        pseudo = profile.pseudo,
+                                        schoolClass = profile.schoolClass,
+                                        series = profile.series.orEmpty()
+                                    )
+                                )
                                 historique.add("dashboard")
                                 null
                             } catch (e: Exception) {
@@ -1571,42 +1758,58 @@ private fun DashboardScreen(
                 Triple("🎯", "Mes révisions du jour", Vert),
                 Triple("🗓️", "Mon emploi du temps", Violet),
                 Triple("✍️", "Exercice", Color(0xFFE59A18)),
+                Triple("🎙️", "Boualo", Violet),
+                Triple("🏆", "Défi du samedi", Vert),
                 Triple("⚙️", "Paramètre", Color(0xFF64748B))
             )
 
-            rubriques.forEach { item ->
-                Surface(
-                    onClick = { rubrique = item.second },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    color = Color.White,
-                    border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+            rubriques.chunked(2).forEach { ligne ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(17.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    ligne.forEach { item ->
                         Surface(
-                            shape = RoundedCornerShape(13.dp),
-                            color = item.third.copy(alpha = 0.12f)
+                            onClick = { rubrique = item.second },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 5.dp),
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFE2E9F5))
                         ) {
-                            Text(
-                                item.first,
-                                modifier = Modifier.padding(12.dp),
-                                fontSize = 25.sp
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(13.dp),
+                                    color = item.third.copy(alpha = 0.12f)
+                                ) {
+                                    Text(
+                                        item.first,
+                                        modifier = Modifier.padding(10.dp),
+                                        fontSize = 25.sp
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    item.second,
+                                    fontSize = 15.sp,
+                                    lineHeight = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Texte
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text("Ouvrir  ›", fontSize = 12.sp, color = item.third)
+                            }
                         }
-                        Spacer(Modifier.width(15.dp))
-                        Text(
-                            item.second,
-                            modifier = Modifier.weight(1f),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Texte
-                        )
-                        Text("›", fontSize = 27.sp, color = item.third)
+                    }
+
+                    if (ligne.size == 1) {
+                        Spacer(Modifier.weight(1f))
                     }
                 }
             }
@@ -1636,7 +1839,11 @@ private fun RubriqueMonProfaScreen(
         "Mon emploi du temps" ->
             "Retrouve ici ton planning de cours et tes séances de révision."
         "Exercice" ->
-            "Cet espace accueillera les exercices pour t'entraîner."
+            "Retrouve des exercices pour t'entraîner et progresser."
+        "Boualo" ->
+            "Ton espace de récitation audio : prépare tes leçons à réciter. L'enregistrement et la réécoute seront ajoutés dans une prochaine étape."
+        "Défi du samedi" ->
+            "Un défi hebdomadaire pour tester tes connaissances et te mesurer aux autres élèves. Les sujets, le chronomètre et le classement nécessitent encore leur mise en place."
         "Paramètre" ->
             "Les options de ton application seront regroupées dans cet espace."
         else -> ""
