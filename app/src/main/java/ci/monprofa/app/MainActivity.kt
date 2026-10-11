@@ -2078,7 +2078,7 @@ private fun DashboardScreen(
 
                     "Version de l'application" -> PageInformation(
                         "Version de l'application",
-                        "Version ${runCatching { ci.monprofa.app."1.0" }.getOrDefault("non renseignée")}"
+                        "Version ${runCatching { ci.monprofa.app."1.0" }.getOrDefault("non renseignée")}""Version actuelle"
                     )
 
                     else -> {
