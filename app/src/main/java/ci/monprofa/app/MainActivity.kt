@@ -2209,13 +2209,11 @@ private fun RubriqueMonProfaScreen(
         else -> ""
     }
 
-    AppBackground {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(22.dp)
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(22.dp)
+    ) {
             TextButton(onClick = onRetour) {
                 Text("‹ Retour au tableau de bord", color = Bleu)
             }
@@ -2244,5 +2242,4 @@ private fun RubriqueMonProfaScreen(
                 )
             }
         }
-    }
 }
