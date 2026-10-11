@@ -29,6 +29,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.platform.LocalConfiguration
 
 private val Bleu = Color(0xFF2457C5)
 private val BleuClair = Color(0xFF4778D8)
@@ -1410,14 +1412,41 @@ private fun DashboardScreen(
             }
 
             Spacer(Modifier.height(14.dp))
-            DashboardTile("📚", "Mes cours",
-                "Retrouve tes cours et les notions à apprendre.", Bleu)
-            Spacer(Modifier.height(12.dp))
-            DashboardTile("✍️", "Mes exercices",
-                "Entraîne-toi pour mieux comprendre.", Vert)
-            Spacer(Modifier.height(12.dp))
-            DashboardTile("📈", "Ma progression",
-                "Suis tes progrès au fil de tes révisions.", Violet)
+            androidx.compose.foundation.layout.FlowRow(
+                maxItemsInEachRow = 2,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val largeurModule = (LocalConfiguration.current.screenWidthDp.dp - 56.dp) / 2
+
+                Box(modifier = Modifier.width(largeurModule)) {
+                    DashboardTile(
+                        emoji = "📚",
+                        title = "Mes cours",
+                        description = "Retrouve tes cours et les notions à apprendre.",
+                        accent = Bleu
+                    )
+                }
+
+                Box(modifier = Modifier.width(largeurModule)) {
+                    DashboardTile(
+                        emoji = "✍️",
+                        title = "Mes exercices",
+                        description = "Entraîne-toi pour mieux comprendre.",
+                        accent = Vert
+                    )
+                }
+
+                Box(modifier = Modifier.width(largeurModule)) {
+                    DashboardTile(
+                        emoji = "📈",
+                        title = "Ma progression",
+                        description = "Suis tes progrès au fil de tes révisions.",
+                        accent = Violet
+                    )
+                }
+            }
 
             Spacer(Modifier.height(18.dp))
             Text(
