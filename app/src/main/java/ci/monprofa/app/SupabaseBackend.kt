@@ -19,7 +19,8 @@ object SupabaseBackend {
 
     data class AuthResult(
         val accessToken: String?,
-        val userId: String?
+        val userId: String?,
+        val refreshToken: String? = null
     )
 
     data class StudentProfile(
@@ -55,7 +56,8 @@ object SupabaseBackend {
 
         return AuthResult(
             accessToken = response.optString("access_token").takeIf { it.isNotBlank() },
-            userId = userId
+            userId = userId,
+            refreshToken = response.optString("refresh_token").takeIf { it.isNotBlank() }
         )
     }
 
@@ -70,7 +72,8 @@ object SupabaseBackend {
 
         return AuthResult(
             accessToken = response.optString("access_token").takeIf { it.isNotBlank() },
-            userId = user.optString("id").takeIf { it.isNotBlank() }
+            userId = user.optString("id").takeIf { it.isNotBlank() },
+            refreshToken = response.optString("refresh_token").takeIf { it.isNotBlank() }
         )
     }
 
@@ -98,6 +101,47 @@ object SupabaseBackend {
         val userId = user.optString("id").takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Identifiant du compte absent.")
 
+        return AuthResult(
+            accessToken = token,
+            userId = userId,
+            refreshToken = response.optString("refresh_token").takeIf { it.isNotBlank() }
+        )
+    }
+
+    suspend fun refreshSession(refreshToken: String): AuthResult {
+        val response = JSONObject(
+            request(
+                "/auth/v1/token?grant_type=refresh_token",
+                "POST",
+                JSONObject().put("refresh_token", refreshToken)
+            )
+        )
+        val user = response.optJSONObject("user") ?: JSONObject()
+        val token = response.optString("access_token").takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException("Session expirée. Connecte-toi à nouveau.")
+        val userId = user.optString("id").takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException("Identifiant du compte absent.")
+
+        return AuthResult(
+            accessToken = token,
+            userId = userId,
+            refreshToken = response.optString("refresh_token").takeIf { it.isNotBlank() }
+        )
+    }
+
+    suspend fun signInWithPseudo(pseudo: String, password: String): AuthResult {
+        val body = JSONObject()
+            .put("pseudo", pseudo.trim())
+            .put("password", password)
+        val response = JSONObject(
+            request("/functions/v1/sign-in-pseudo", "POST", body)
+        )
+        val token = response.optString("access_token").takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException(
+                response.optString("error").ifBlank { "Pseudo ou mot de passe incorrect." }
+            )
+        val userId = response.optString("user_id").takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException("Identifiant du compte absent.")
         return AuthResult(token, userId)
     }
 

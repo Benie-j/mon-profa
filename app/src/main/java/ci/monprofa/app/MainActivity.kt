@@ -192,7 +192,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onLogin = { email, password ->
                             try {
-                                val result = SupabaseBackend.signIn(email, password)
+                                val result = SupabaseBackend.signInWithPseudo(email, password)
                                 val token = result.accessToken
                                     ?: throw IllegalStateException("Session non reçue.")
                                 val userId = result.userId
@@ -1071,7 +1071,7 @@ private fun LoginScreen(
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val emailConnexionValide = Patterns.EMAIL_ADDRESS.matcher(pseudo.trim()).matches()
+    val pseudoConnexionValide = pseudo.trim().matches(Regex("^[A-Za-z0-9_.]{3,20}$"))
     val emailValide = Patterns.EMAIL_ADDRESS.matcher(emailRecuperation.trim()).matches()
 
     AppBackground {
@@ -1134,14 +1134,14 @@ private fun LoginScreen(
                 )
             } else {
                 FormField(
-                    label = "Adresse e-mail",
+                    label = "Pseudo",
                     value = pseudo,
                     onValueChange = {
                         pseudo = it
                         message = ""
                     },
-                    placeholder = "exemple@email.com",
-                    keyboardType = KeyboardType.Email
+                    placeholder = "Ton pseudo",
+                    keyboardType = KeyboardType.Text
                 )
             }
 
@@ -1195,7 +1195,7 @@ private fun LoginScreen(
                     else -> "Se connecter"
                 },
                 enabled = !loading && if (modeRecuperation) emailValide
-                    else emailConnexionValide && motDePasse.isNotEmpty(),
+                    else pseudoConnexionValide && motDePasse.isNotEmpty(),
                 onClick = {
                     scope.launch {
                         loading = true
