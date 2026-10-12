@@ -68,6 +68,12 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
+                var splashVisible by remember { mutableStateOf(true) }
+                LaunchedEffect(Unit) {
+                    delay(1650)
+                    splashVisible = false
+                }
+
                 // La pile mémorise le parcours réel de l'utilisateur.
                 val historique = remember {
                     mutableStateListOf("restauration")
@@ -183,12 +189,6 @@ class MainActivity : ComponentActivity() {
                             historique.add("accueil")
                         }
                     }
-                }
-
-                var splashVisible by remember { mutableStateOf(true) }
-                LaunchedEffect(Unit) {
-                    delay(1650)
-                    splashVisible = false
                 }
 
                 val pageActuelle = historique.last()
