@@ -72,13 +72,7 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                var splashVisible by remember { mutableStateOf(true) }
-                LaunchedEffect(Unit) {
-                    delay(1650)
-                    splashVisible = false
-                }
-
-                }
+}
 
                 // La pile mémorise le parcours réel de l'utilisateur.
                 val historique = remember {
@@ -475,7 +469,12 @@ class MainActivity : ComponentActivity() {
 
                 }
 
-                if (splashVisible) {
+                var splashVisibleLocal by remember { mutableStateOf(true) }
+                LaunchedEffect(Unit) {
+                    delay(1650)
+                    splashVisibleLocal = false
+                }
+                if (splashVisibleLocal) {
                     MonProfaAnimatedSplash()
                 }
             }
