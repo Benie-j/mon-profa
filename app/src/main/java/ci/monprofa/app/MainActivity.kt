@@ -59,6 +59,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+                var splashVisible by remember { mutableStateOf(true) }
+                LaunchedEffect(Unit) {
+                    delay(1650)
+                    splashVisible = false
             MaterialTheme(
                 colorScheme = lightColorScheme(
                     primary = Bleu,
@@ -68,10 +72,6 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                var splashVisible by remember { mutableStateOf(true) }
-                LaunchedEffect(Unit) {
-                    delay(1650)
-                    splashVisible = false
                 }
 
                 // La pile mémorise le parcours réel de l'utilisateur.
