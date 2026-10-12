@@ -164,6 +164,40 @@ object SupabaseBackend {
         )
     }
 
+
+    /**
+     * Modifie uniquement le pseudo et la série du profil connecté.
+     * Le niveau scolaire reste inchangé.
+     */
+    suspend fun updateProfile(
+        accessToken: String,
+        userId: String,
+        pseudo: String,
+        series: String
+    ): StudentProfile {
+        val cleanPseudo = pseudo.trim()
+        val cleanSeries = series.trim()
+
+        require(cleanPseudo.length in 3..20) {
+            "Le pseudo doit contenir entre 3 et 20 caractères."
+        }
+
+        val body = JSONObject()
+            .put("pseudo", cleanPseudo)
+            .put("series", cleanSeries.ifBlank { JSONObject.NULL })
+
+        val path = "/rest/v1/profiles?id=eq.$userId"
+
+        request(
+            path = path,
+            method = "PATCH",
+            body = body,
+            accessToken = accessToken
+        )
+
+        return getProfile(accessToken, userId)
+    }
+
     suspend fun sendPasswordReset(email: String) {
         request(
             "/auth/v1/recover",

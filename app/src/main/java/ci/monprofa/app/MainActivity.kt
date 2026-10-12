@@ -348,6 +348,31 @@ class MainActivity : ComponentActivity() {
                             ).getString("pseudo", "").orEmpty()
                         },
                         email = emailInscription,
+                        onUpdateProfile = { nouveauPseudo, nouvelleSerie ->
+                            val token = accessToken
+                                ?: throw IllegalStateException("Session expirée. Reconnecte-toi.")
+                            val session = SecureSessionStore.load(contexteApp)
+                                ?: throw IllegalStateException("Session introuvable. Reconnecte-toi.")
+
+                            val profil = SupabaseBackend.updateProfile(
+                                accessToken = token,
+                                userId = session.userId,
+                                pseudo = nouveauPseudo,
+                                series = nouvelleSerie
+                            )
+
+                            SecureSessionStore.save(
+                                contexteApp,
+                                session.copy(
+                                    accessToken = token,
+                                    pseudo = profil.pseudo,
+                                    series = profil.series.orEmpty()
+                                )
+                            )
+                            pseudoUtilisateur = profil.pseudo
+                            serieChoisie = profil.series.orEmpty()
+                            profil
+                        },
                         onHome = {
                             confirmerSortie = false
                             historique.clear()
@@ -1671,6 +1696,7 @@ private fun DashboardScreen(
     series: String,
     pseudo: String,
     email: String,
+    onUpdateProfile: suspend (String, String) -> SupabaseBackend.StudentProfile,
     onHome: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -2050,10 +2076,127 @@ private fun DashboardScreen(
                     }
 
                     "Modifier mes informations" -> {
-                        PageInformation(
-                            titre = "Gérer mes informations",
-                            texte = "La modification sécurisée des identifiants sera ajoutée dans la prochaine étape. Aucun changement n'est effectué pour le moment."
+                        var pseudoSaisi by remember(pseudo) {
+                            mutableStateOf(pseudo)
+                        }
+                        var serieSaisie by remember(series) {
+                            mutableStateOf(series)
+                        }
+                        var enregistrementEnCours by remember {
+                            mutableStateOf(false)
+                        }
+                        var messageProfil by remember {
+                            mutableStateOf<String?>(null)
+                        }
+                        val portee = rememberCoroutineScope()
+
+                        Text(
+                            "Gérer mes informations",
+                            fontSize = 25.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Bleu
                         )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Modifie ton pseudo et ta série. Ton niveau scolaire ne peut pas être modifié ici.",
+                            fontSize = 14.sp,
+                            lineHeight = 21.sp,
+                            color = Texte.copy(alpha = 0.75f)
+                        )
+                        Spacer(Modifier.height(20.dp))
+
+                        OutlinedTextField(
+                            value = pseudoSaisi,
+                            onValueChange = {
+                                pseudoSaisi = it
+                                messageProfil = null
+                            },
+                            label = { Text("Pseudo") },
+                            singleLine = true,
+                            enabled = !enregistrementEnCours,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(14.dp))
+
+                        OutlinedTextField(
+                            value = serieSaisie,
+                            onValueChange = {
+                                serieSaisie = it
+                                messageProfil = null
+                            },
+                            label = { Text("Série") },
+                            placeholder = { Text("Ex. : A, C, D…") },
+                            singleLine = true,
+                            enabled = !enregistrementEnCours,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(14.dp))
+
+                        CarteProfil(
+                            "Niveau scolaire — non modifiable",
+                            schoolClass.ifBlank { "Non renseigné" }
+                        )
+
+                        messageProfil?.let { message ->
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                message,
+                                color = if (message.startsWith("Profil enregistré")) {
+                                    Color(0xFF238636)
+                                } else {
+                                    Color(0xFFC43D4B)
+                                },
+                                fontSize = 13.sp,
+                                lineHeight = 19.sp
+                            )
+                        }
+
+                        Spacer(Modifier.height(18.dp))
+                        Button(
+                            onClick = {
+                                val pseudoNettoye = pseudoSaisi.trim()
+                                if (pseudoNettoye.length !in 3..20) {
+                                    messageProfil =
+                                        "Le pseudo doit contenir entre 3 et 20 caractères."
+                                } else {
+                                    portee.launch {
+                                        enregistrementEnCours = true
+                                        messageProfil = null
+                                        try {
+                                            onUpdateProfile(
+                                                pseudoNettoye,
+                                                serieSaisie.trim()
+                                            )
+                                            messageProfil =
+                                                "Profil enregistré avec succès."
+                                        } catch (e: Exception) {
+                                            messageProfil = e.message
+                                                ?: "Échec de l'enregistrement. Réessaie."
+                                        } finally {
+                                            enregistrementEnCours = false
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !enregistrementEnCours,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                if (enregistrementEnCours) {
+                                    "Enregistrement…"
+                                } else {
+                                    "Enregistrer les modifications"
+                                }
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { retourPage() },
+                            enabled = !enregistrementEnCours,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Retour au profil")
+                        }
                     }
 
                     "Thème" -> PageInformation(

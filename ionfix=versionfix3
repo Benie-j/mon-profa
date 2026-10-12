@@ -1,0 +1,13 @@
+[1mdiff --git a/app/src/main/java/ci/monprofa/app/MainActivity.kt b/app/src/main/java/ci/monprofa/app/MainActivity.kt[m
+[1mindex f8dbc73..fc8ee6e 100644[m
+[1m--- a/app/src/main/java/ci/monprofa/app/MainActivity.kt[m
+[1m+++ b/app/src/main/java/ci/monprofa/app/MainActivity.kt[m
+[36m@@ -2078,7 +2078,7 @@[m [mprivate fun DashboardScreen([m
+ [m
+                     "Version de l'application" -> PageInformation([m
+                         "Version de l'application",[m
+[31m-                        "Version ${runCatching { ci.monprofa.app."1.0" }.getOrDefault("non renseignée")}"[m
+[32m+[m[32m                        "Version ${runCatching { ci.monprofa.app."1.0" }.getOrDefault("non renseignée")}""Version actuelle"[m
+                     )[m
+ [m
+                     else -> {[m
