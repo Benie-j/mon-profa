@@ -72,6 +72,12 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
+                var splashVisible by remember { mutableStateOf(true) }
+                LaunchedEffect(Unit) {
+                    delay(1650)
+                    splashVisible = false
+                }
+
                 }
 
                 // La pile mémorise le parcours réel de l'utilisateur.
