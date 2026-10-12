@@ -4,7 +4,7 @@
         android:allowBackup="false"
         android:label="Mon profa"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/MonProfaLaunchTheme">
 
         <activity
             android:name=".MainActivity"

@@ -17,6 +17,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -54,6 +66,13 @@ class MainActivity : ComponentActivity() {
                     background = Fond
                 )
             ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                var splashVisible by remember { mutableStateOf(true) }
+                LaunchedEffect(Unit) {
+                    delay(1650)
+                    splashVisible = false
+                }
+
                 // La pile mémorise le parcours réel de l'utilisateur.
                 val historique = remember {
                     mutableStateListOf("restauration")
@@ -446,8 +465,97 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 }
+
+                if (splashVisible) {
+                    MonProfaAnimatedSplash()
+                }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun MonProfaAnimatedSplash() {
+    val progress = remember { Animatable(0.72f) }
+    val fade = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        launch {
+            progress.animateTo(
+                1f,
+                animationSpec = tween(durationMillis = 1050)
+            )
+        }
+        fade.animateTo(1f, animationSpec = tween(durationMillis = 650))
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF075BFA),
+                        Color(0xFF082A9D),
+                        Color(0xFF04134F),
+                        Color(0xFF063BD0)
+                    )
+                )
+            )
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val upper = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(w * 0.43f, 0f)
+                cubicTo(w * 0.29f, h * 0.09f, w * 0.12f, h * 0.11f, 0f, h * 0.18f)
+                close()
+            }
+            drawPath(upper, Color(0xFF1675FF).copy(alpha = 0.45f))
+            val lower = Path().apply {
+                moveTo(w, h * 0.72f)
+                cubicTo(w * 0.80f, h * 0.88f, w * 0.39f, h * 0.91f, 0f, h)
+                lineTo(w, h)
+                close()
+            }
+            drawPath(lower, Color(0xFF006BFF).copy(alpha = 0.35f))
+            val curve = Path().apply {
+                moveTo(w, h * 0.72f)
+                cubicTo(w * 0.84f, h * 0.88f, w * 0.40f, h * 0.93f, 0f, h)
+            }
+            drawPath(
+                curve,
+                Color(0xFF24CFFF).copy(alpha = 0.75f),
+                style = Stroke(width = 2.dp.toPx())
+            )
+        }
+
+        Image(
+            painter = painterResource(id = R.drawable.mon_profa_splash_logo),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(190.dp)
+                .graphicsLayer {
+                    scaleX = progress.value
+                    scaleY = progress.value
+                    alpha = fade.value
+                }
+        )
+
+        Text(
+            text = "—  by Benie groupe  —",
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 42.dp)
+                .alpha(fade.value),
+            color = Color(0xFFF2F7FF),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.5.sp
+        )
     }
 }
 
