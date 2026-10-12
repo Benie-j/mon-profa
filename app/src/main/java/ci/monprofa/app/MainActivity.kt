@@ -59,10 +59,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-                var splashVisible by remember { mutableStateOf(true) }
-                LaunchedEffect(Unit) {
-                    delay(1650)
-                    splashVisible = false
             MaterialTheme(
                 colorScheme = lightColorScheme(
                     primary = Bleu,
@@ -72,8 +68,6 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-}
-
                 // La pile mémorise le parcours réel de l'utilisateur.
                 val historique = remember {
                     mutableStateListOf("restauration")
@@ -467,8 +461,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                }
-
                 var splashVisibleLocal by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
                     delay(1650)
@@ -476,6 +468,7 @@ class MainActivity : ComponentActivity() {
                 }
                 if (splashVisibleLocal) {
                     MonProfaAnimatedSplash()
+                }
                 }
             }
         }
