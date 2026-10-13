@@ -7,6 +7,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
+import java.net.URLEncoder
 import java.net.UnknownHostException
 
 /**
@@ -56,7 +57,16 @@ object SupabaseBackend {
             .put("password", password)
             .put("data", metadata)
 
-        val response = JSONObject(request("/auth/v1/signup", "POST", body))
+        val redirect = URLEncoder.encode(
+            "monprofa://auth/callback", "UTF-8"
+        )
+        val response = JSONObject(
+            request(
+                "/auth/v1/signup?redirect_to=$redirect",
+                "POST",
+                body
+            )
+        )
         val user = response.optJSONObject("user") ?: response
         val userId = user.optString("id").takeIf { it.isNotBlank() }
 
@@ -68,6 +78,35 @@ object SupabaseBackend {
             accessToken = response.optString("access_token").takeIf { it.isNotBlank() },
             userId = userId,
             refreshToken = response.optString("refresh_token").takeIf { it.isNotBlank() }
+        )
+    }
+
+    /**
+     * Vérifie le jeton reçu après la confirmation par lien e-mail.
+     * Supabase retourne l'identité uniquement si le jeton est valide.
+     */
+    suspend fun verifyAccessToken(accessToken: String): AuthResult {
+        require(accessToken.isNotBlank()) {
+            "Jeton de confirmation absent."
+        }
+
+        val response = JSONObject(
+            request(
+                "/auth/v1/user",
+                "GET",
+                accessToken = accessToken
+            )
+        )
+
+        val userId = response.optString("id")
+            .takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException(
+                "Supabase n'a pas retourné l'identifiant du compte."
+            )
+
+        return AuthResult(
+            accessToken = accessToken,
+            userId = userId
         )
     }
 

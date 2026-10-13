@@ -1,6 +1,8 @@
 package ci.monprofa.app
 
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.IntOffset
@@ -54,6 +56,14 @@ private val Fond = Color(0xFFF5F8FF)
 private val Texte = Color(0xFF202B45)
 
 class MainActivity : ComponentActivity() {
+    private var pendingAuthIntent by mutableStateOf<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingAuthIntent = intent
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setOnExitAnimationListener { splashScreenView ->
@@ -66,6 +76,7 @@ class MainActivity : ComponentActivity() {
                 .start()
         }
         super.onCreate(savedInstanceState)
+        pendingAuthIntent = intent
 
         setContent {
             MaterialTheme(
@@ -194,6 +205,96 @@ class MainActivity : ComponentActivity() {
                                     saved.series
                                 )
                             }
+                        }
+                    }
+                }
+
+
+                // Confirmation par lien e-mail : valider le jeton avant
+                // de créer une session locale.
+                LaunchedEffect(pendingAuthIntent) {
+                    val callbackIntent = pendingAuthIntent
+                    val uri = callbackIntent?.data
+
+                    if (uri != null &&
+                        uri.scheme == "monprofa" &&
+                        uri.host == "auth" &&
+                        uri.path == "/callback"
+                    ) {
+                        pendingAuthIntent = null
+
+                        try {
+                            val fragmentParams = uri.fragment
+                                ?.let { Uri.parse("https://callback.invalid/?$it") }
+
+                            val receivedAccessToken =
+                                uri.getQueryParameter("access_token")
+                                    ?: fragmentParams?.getQueryParameter("access_token")
+
+                            val refreshToken =
+                                uri.getQueryParameter("refresh_token")
+                                    ?: fragmentParams?.getQueryParameter("refresh_token")
+
+                            if (receivedAccessToken.isNullOrBlank()) {
+                                throw IllegalStateException(
+                                    "Le lien ne contient pas de jeton de session. " +
+                                    "Vérifie le modèle d'e-mail Supabase."
+                                )
+                            }
+
+                            if (refreshToken.isNullOrBlank()) {
+                                throw IllegalStateException(
+                                    "Jeton de renouvellement absent du lien. " +
+                                    "La session ne peut pas être conservée."
+                                )
+                            }
+
+                            val verified =
+                                SupabaseBackend.verifyAccessToken(receivedAccessToken)
+
+                            val userId = verified.userId
+                                ?: throw IllegalStateException(
+                                    "Identifiant du compte absent."
+                                )
+
+                            val profile = SupabaseBackend.getProfile(
+                                accessToken = receivedAccessToken,
+                                userId = userId
+                            )
+
+                            SecureSessionStore.save(
+                                contexteApp,
+                                SecureSessionStore.Session(
+                                    accessToken = receivedAccessToken,
+                                    refreshToken = refreshToken,
+                                    userId = userId,
+                                    pseudo = profile.pseudo,
+                                    schoolClass = profile.schoolClass,
+                                    series = profile.series.orEmpty()
+                                )
+                            )
+
+                            accessToken = receivedAccessToken
+                            this@MainActivity.pendingAuthIntent = null
+                            emailInscription = uri.getQueryParameter("email").orEmpty()
+                            pseudoUtilisateur = profile.pseudo
+                            classeChoisie = profile.schoolClass
+                            serieChoisie = profile.series.orEmpty()
+                            this@MainActivity.getSharedPreferences(
+                                "mon_profa",
+                                android.content.Context.MODE_PRIVATE
+                            ).edit().putString("pseudo", profile.pseudo).apply()
+
+                            historique.clear()
+                            historique.add("dashboard")
+                        } catch (e: Exception) {
+                            historique.clear()
+                            historique.add("accueil")
+                            android.widget.Toast.makeText(
+                                contexteApp,
+                                e.message ?: "Impossible de confirmer le compte.",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
                 }

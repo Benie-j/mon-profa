@@ -115,17 +115,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         fun estErreurReseau(e: Exception): Boolean {
-                            val message = e.message.orEmpty().lowercase()
-                            return listOf(
-                                "pas de connexion internet",
-                                "vérifie ton réseau",
-                                "trop de temps",
-                                "timeout",
-                                "unable to resolve host",
-                                "network is unreachable",
-                                "connection refused",
-                                "failed to connect"
-                            ).any { it in message }
+                            return e is SupabaseBackend.NetworkException
                         }
 
                         try {
@@ -185,11 +175,25 @@ class MainActivity : ComponentActivity() {
                                 token, profile.pseudo,
                                 profile.schoolClass, profile.series.orEmpty()
                             )
-                        } catch (_: Exception) {
-                            // Session refusée par Supabase : demander une nouvelle connexion.
-                            SecureSessionStore.clear(contexteApp)
-                            historique.clear()
-                            historique.add("accueil")
+                        } catch (e: Exception) {
+                            val sessionRefusee =
+                                e is SupabaseBackend.HttpException &&
+                                e.statusCode in listOf(400, 401)
+
+                            if (sessionRefusee) {
+                                // Supabase refuse la session : nouvelle connexion nécessaire.
+                                SecureSessionStore.clear(contexteApp)
+                                historique.clear()
+                                historique.add("accueil")
+                            } else {
+                                // Erreur serveur ou inattendue : garder la session locale.
+                                afficherSession(
+                                    saved.accessToken,
+                                    saved.pseudo,
+                                    saved.schoolClass,
+                                    saved.series
+                                )
+                            }
                         }
                     }
                 }
@@ -504,7 +508,7 @@ private fun MonProfaAnimatedSplash() {
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(48.dp)
+                .size(240.dp)
                 .graphicsLayer { alpha = fade.value }
         )
 
@@ -1919,7 +1923,17 @@ private fun DashboardScreen(
                 val rubriques = listOf(
                     Triple("📚", "Mes disciplines", Bleu),
                     Triple("🗓️", "Mes cours du jour", Vert),
-                    Triple("🏆", "Le challenge", Violet),
+                    Triple(
+                        "🏆",
+                        when {
+                            schoolClass == "3e" -> "Défi BEPC"
+                            series == "A" -> "Défi BAC A"
+                            series == "C" -> "Défi BAC C"
+                            series == "D" -> "Défi BAC D"
+                            else -> "Le challenge"
+                        },
+                        Violet
+                    ),
                     Triple("✍️", "Exercice", Color(0xFFE59A18)),
                     Triple("🎙️", "Faire un boualo", Violet),
                     Triple("📅", "Mon emploi du temps", Vert),
@@ -1938,7 +1952,9 @@ private fun DashboardScreen(
                             val description = when (item.second) {
                                 "Mes disciplines" -> "Tes matières et tes leçons"
                                 "Mes cours du jour" -> "Ce que tu dois étudier"
-                                "Le challenge" -> "Teste tes connaissances"
+                                "Le challenge", "Défi BEPC", "Défi BAC A",
+                                "Défi BAC C", "Défi BAC D" ->
+                                    "Teste tes connaissances pour ton examen"
                                 "Exercice" -> "Entraîne-toi à ton rythme"
                                 "Faire un boualo" -> "Récite et mémorise tes cours"
                                 "Mon emploi du temps" -> "Organise ta semaine"
