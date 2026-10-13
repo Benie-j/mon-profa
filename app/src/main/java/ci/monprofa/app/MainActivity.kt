@@ -1902,7 +1902,7 @@ private fun DashboardScreen(
                 Spacer(Modifier.height(28.dp))
 
                 Text(
-                    "Espace ${if (schoolClass == "3e") "3e" else "Terminale ${series}"}",
+                    "Ton espace de travail",
                     fontSize = 21.sp,
                     lineHeight = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
