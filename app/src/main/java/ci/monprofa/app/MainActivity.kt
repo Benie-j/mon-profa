@@ -472,7 +472,7 @@ class MainActivity : ComponentActivity() {
 
                 var splashVisibleLocal by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
-                    delay(6650)
+                    delay(4000)
                     splashVisibleLocal = false
                 }
                 if (splashVisibleLocal) {
@@ -504,7 +504,7 @@ private fun MonProfaAnimatedSplash() {
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(72.dp)
+                .size(48.dp)
                 .graphicsLayer { alpha = fade.value }
         )
 
