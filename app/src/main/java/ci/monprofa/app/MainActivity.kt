@@ -1367,7 +1367,37 @@ private fun LoginScreen(
     var message by remember { mutableStateOf("") }
     var modeRecuperation by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+    var blockedUntilMillis by remember { mutableLongStateOf(0L) }
+    var countdownSeconds by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(blockedUntilMillis) {
+        while (blockedUntilMillis > System.currentTimeMillis()) {
+            countdownSeconds = (
+                (blockedUntilMillis - System.currentTimeMillis() + 999L) / 1000L
+            ).toInt()
+            delay(1000)
+        }
+        countdownSeconds = 0
+        blockedUntilMillis = 0L
+    }
+
+    fun formatCountdown(seconds: Int): String {
+        return "%02d:%02d".format(seconds / 60, seconds % 60)
+    }
+
+    fun parseLockMessage(value: String): String {
+        val match = Regex("LOCK_SECONDS:(\\d+)\\|").find(value)
+        val seconds = match?.groupValues?.getOrNull(1)?.toLongOrNull()
+
+        if (seconds != null && seconds > 0L) {
+            blockedUntilMillis =
+                System.currentTimeMillis() + seconds * 1000L
+            countdownSeconds = seconds.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            return value.substring(match.range.last + 1)
+        }
+        return value
+    }
 
     val pseudoConnexionValide = pseudo.trim().matches(Regex("^[A-Za-z0-9_.]{3,20}$"))
     val emailValide = Patterns.EMAIL_ADDRESS.matcher(emailRecuperation.trim()).matches()
@@ -1476,13 +1506,34 @@ private fun LoginScreen(
             }
 
             if (message.isNotEmpty()) {
-                Text(
-                    message,
-                    color = Bleu,
-                    fontSize = 13.sp,
-                    lineHeight = 19.sp,
-                    textAlign = TextAlign.Center
-                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFFFEEEE),
+                    border = BorderStroke(1.dp, Color(0xFFF2B8B8))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = 14.dp,
+                            vertical = 12.dp
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "⚠",
+                            color = Color(0xFFB42318),
+                            fontSize = 18.sp
+                        )
+                        Spacer(Modifier.width(9.dp))
+                        Text(
+                            message,
+                            color = Color(0xFFB42318),
+                            fontSize = 13.sp,
+                            lineHeight = 19.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
             }
 
@@ -1492,8 +1543,10 @@ private fun LoginScreen(
                     modeRecuperation -> "Envoyer les instructions"
                     else -> "Se connecter"
                 },
-                enabled = !loading && if (modeRecuperation) emailValide
-                    else pseudoConnexionValide && motDePasse.isNotEmpty(),
+                enabled = !loading &&
+                    (modeRecuperation || countdownSeconds <= 0) &&
+                    (if (modeRecuperation) emailValide
+                    else pseudoConnexionValide && motDePasse.isNotEmpty()),
                 onClick = {
                     scope.launch {
                         loading = true
@@ -1503,10 +1556,23 @@ private fun LoginScreen(
                         } else {
                             onLogin(pseudo.trim(), motDePasse).orEmpty()
                         }
+                        message = parseLockMessage(message)
                         loading = false
                     }
                 }
             )
+
+            if (!modeRecuperation && countdownSeconds > 0) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Nouvelle tentative dans " +
+                        formatCountdown(countdownSeconds),
+                    color = Color(0xFFB42318),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             if (modeRecuperation) {
                 Text(
