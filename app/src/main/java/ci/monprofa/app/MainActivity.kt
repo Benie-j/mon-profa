@@ -55,7 +55,16 @@ private val Texte = Color(0xFF202B45)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
+        splashScreen.setOnExitAnimationListener { splashScreenView ->
+            splashScreenView.view.animate()
+                .alpha(0f)
+                .setDuration(350L)
+                .withEndAction {
+                    splashScreenView.remove()
+                }
+                .start()
+        }
         super.onCreate(savedInstanceState)
 
         setContent {
