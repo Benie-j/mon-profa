@@ -673,7 +673,19 @@ private fun AppBackground(content: @Composable () -> Unit) {
                 .size(7.dp)
                 .background(Violet.copy(alpha = 0.65f), CircleShape)
         )
-        content()
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 1100.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+            ) {
+                content()
+            }
+        }
     }
 }
 
@@ -866,6 +878,7 @@ private fun WelcomeScreen(
     AppBackground {
         Column(
             Modifier
+                .widthIn(max = 680.dp)
                 .fillMaxSize()
                 .padding(horizontal = 28.dp, vertical = 34.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -935,6 +948,7 @@ private fun ClassSelectionScreen(
     AppBackground {
         Column(
             Modifier
+                .widthIn(max = 680.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 30.dp),
@@ -1271,6 +1285,7 @@ private fun RegistrationScreen(
     AppBackground {
         Column(
             Modifier
+                .widthIn(max = 680.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 30.dp),
@@ -1506,6 +1521,7 @@ private fun LoginScreen(
     AppBackground {
         Column(
             Modifier
+                .widthIn(max = 680.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 30.dp),
@@ -1731,7 +1747,7 @@ private fun EmailVerificationScreen(
 
     AppBackground {
         Column(
-            Modifier.fillMaxSize()
+            Modifier.widthIn(max = 680.dp).fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 26.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -2109,7 +2125,15 @@ private fun DashboardScreen(
                     Triple("🛠️", "Signaler un problème", Color(0xFFD45A55))
                 )
 
-                rubriques.chunked(2).forEach { ligne ->
+                val largeurEcranDp =
+                    LocalConfiguration.current.screenWidthDp
+                val nombreColonnes = when {
+                    largeurEcranDp >= 1200 -> 4
+                    largeurEcranDp >= 840 -> 3
+                    else -> 2
+                }
+
+                rubriques.chunked(nombreColonnes).forEach { ligne ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -2200,7 +2224,9 @@ private fun DashboardScreen(
                             }
                         }
 
-                        if (ligne.size == 1) {
+                        repeat(
+                            (nombreColonnes - ligne.size).coerceAtLeast(0)
+                        ) {
                             Spacer(Modifier.weight(1f))
                         }
                     }
