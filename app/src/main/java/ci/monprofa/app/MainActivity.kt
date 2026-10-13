@@ -463,7 +463,7 @@ class MainActivity : ComponentActivity() {
 
                 var splashVisibleLocal by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) {
-                    delay(1650)
+                    delay(6650)
                     splashVisibleLocal = false
                 }
                 if (splashVisibleLocal) {
@@ -489,29 +489,27 @@ private fun MonProfaAnimatedSplash() {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF061A68)),
-        contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.mon_profa_splash_logo),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(108.dp)
-                    .graphicsLayer { alpha = fade.value }
-            )
+        Image(
+            painter = painterResource(id = R.drawable.mon_profa_splash_logo),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(72.dp)
+                .graphicsLayer { alpha = fade.value }
+        )
 
-            Text(
-                text = "by Benie groupe",
-                modifier = Modifier.alpha(fade.value),
-                color = Color(0xFFF2F7FF),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.25.sp
-            )
-        }
+        Text(
+            text = "by Benie groupe",
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 22.dp)
+                .alpha(fade.value),
+            color = Color(0xFFF2F7FF),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.25.sp
+        )
     }
 }
 
