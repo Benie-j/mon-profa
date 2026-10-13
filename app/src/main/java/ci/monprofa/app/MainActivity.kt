@@ -1902,7 +1902,7 @@ private fun DashboardScreen(
                 Spacer(Modifier.height(28.dp))
 
                 Text(
-                    "Ton espace de travail",
+                    "Espace ${if (schoolClass == "3e") "3e" else "Terminale ${series}"}",
                     fontSize = 21.sp,
                     lineHeight = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -1919,7 +1919,17 @@ private fun DashboardScreen(
                 val rubriques = listOf(
                     Triple("📚", "Mes disciplines", Bleu),
                     Triple("🗓️", "Mes cours du jour", Vert),
-                    Triple("🏆", "Le challenge", Violet),
+                    Triple(
+                        "🏆",
+                        when {
+                            schoolClass == "3e" -> "Défi BEPC"
+                            series == "A" -> "Défi BAC A"
+                            series == "C" -> "Défi BAC C"
+                            series == "D" -> "Défi BAC D"
+                            else -> "Le challenge"
+                        },
+                        Violet
+                    ),
                     Triple("✍️", "Exercice", Color(0xFFE59A18)),
                     Triple("🎙️", "Faire un boualo", Violet),
                     Triple("📅", "Mon emploi du temps", Vert),
@@ -1938,7 +1948,9 @@ private fun DashboardScreen(
                             val description = when (item.second) {
                                 "Mes disciplines" -> "Tes matières et tes leçons"
                                 "Mes cours du jour" -> "Ce que tu dois étudier"
-                                "Le challenge" -> "Teste tes connaissances"
+                                "Le challenge", "Défi BEPC", "Défi BAC A",
+                                "Défi BAC C", "Défi BAC D" ->
+                                    "Teste tes connaissances pour ton examen"
                                 "Exercice" -> "Entraîne-toi à ton rythme"
                                 "Faire un boualo" -> "Récite et mémorise tes cours"
                                 "Mon emploi du temps" -> "Organise ta semaine"
