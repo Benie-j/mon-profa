@@ -115,17 +115,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         fun estErreurReseau(e: Exception): Boolean {
-                            val message = e.message.orEmpty().lowercase()
-                            return listOf(
-                                "pas de connexion internet",
-                                "vérifie ton réseau",
-                                "trop de temps",
-                                "timeout",
-                                "unable to resolve host",
-                                "network is unreachable",
-                                "connection refused",
-                                "failed to connect"
-                            ).any { it in message }
+                            return e is SupabaseBackend.NetworkException
                         }
 
                         try {
@@ -185,11 +175,25 @@ class MainActivity : ComponentActivity() {
                                 token, profile.pseudo,
                                 profile.schoolClass, profile.series.orEmpty()
                             )
-                        } catch (_: Exception) {
-                            // Session refusée par Supabase : demander une nouvelle connexion.
-                            SecureSessionStore.clear(contexteApp)
-                            historique.clear()
-                            historique.add("accueil")
+                        } catch (e: Exception) {
+                            val sessionRefusee =
+                                e is SupabaseBackend.HttpException &&
+                                e.statusCode in listOf(400, 401)
+
+                            if (sessionRefusee) {
+                                // Supabase refuse la session : nouvelle connexion nécessaire.
+                                SecureSessionStore.clear(contexteApp)
+                                historique.clear()
+                                historique.add("accueil")
+                            } else {
+                                // Erreur serveur ou inattendue : garder la session locale.
+                                afficherSession(
+                                    saved.accessToken,
+                                    saved.pseudo,
+                                    saved.schoolClass,
+                                    saved.series
+                                )
+                            }
                         }
                     }
                 }

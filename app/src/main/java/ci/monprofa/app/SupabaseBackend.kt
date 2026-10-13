@@ -17,6 +17,16 @@ object SupabaseBackend {
     private const val BASE_URL = "https://rywhszxsouqosbqsrezp.supabase.co"
     private const val PUBLISHABLE_KEY = "sb_publishable_XLKfs_djwlzZC_9vTKpFVA_HzBQrxsG"
 
+    class HttpException(
+        val statusCode: Int,
+        message: String
+    ) : IllegalStateException(message)
+
+    class NetworkException(
+        message: String,
+        cause: Throwable? = null
+    ) : IllegalStateException(message, cause)
+
     data class AuthResult(
         val accessToken: String?,
         val userId: String?,
@@ -249,14 +259,14 @@ object SupabaseBackend {
                         json?.optString(key)?.takeIf { it.isNotBlank() && it != "null" }
                     } ?: "Erreur serveur (HTTP $status)."
 
-                throw IllegalStateException(friendlyMessage(rawMessage))
+                throw HttpException(status, friendlyMessage(rawMessage))
             }
 
             response
         } catch (e: UnknownHostException) {
-            throw IllegalStateException("Pas de connexion Internet. Vérifie ton réseau.")
+            throw NetworkException("Pas de connexion Internet. Vérifie ton réseau.", e)
         } catch (e: SocketTimeoutException) {
-            throw IllegalStateException("Le serveur met trop de temps à répondre. Réessaie.")
+            throw NetworkException("Le serveur met trop de temps à répondre. Réessaie.", e)
         } finally {
             connection.disconnect()
         }
