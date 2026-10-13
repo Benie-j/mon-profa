@@ -504,7 +504,7 @@ private fun MonProfaAnimatedSplash() {
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(48.dp)
+                .size(240.dp)
                 .graphicsLayer { alpha = fade.value }
         )
 
