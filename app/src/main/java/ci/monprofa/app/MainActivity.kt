@@ -1,5 +1,7 @@
 package ci.monprofa.app
 
+import androidx.compose.foundation.border
+
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.layout.Arrangement
@@ -607,24 +609,26 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MonProfaAnimatedSplash() {
     val fade = remember { Animatable(0f) }
-    val scale = remember { Animatable(0.82f) }
+    val scale = remember { Animatable(0.86f) }
+    val halo = remember { Animatable(0.08f) }
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.coroutineScope {
             launch {
-                fade.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(durationMillis = 900)
-                )
+                fade.animateTo(1f, animationSpec = tween(850))
             }
             launch {
                 scale.animateTo(
-                    targetValue = 1f,
+                    1f,
                     animationSpec = tween(
-                        durationMillis = 1100,
+                        1100,
                         easing = androidx.compose.animation.core.FastOutSlowInEasing
                     )
                 )
+            }
+            launch {
+                halo.animateTo(0.28f, animationSpec = tween(900))
+                halo.animateTo(0.08f, animationSpec = tween(1000))
             }
         }
     }
@@ -639,17 +643,25 @@ private fun MonProfaAnimatedSplash() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.kalyno_splash_logo),
-                contentDescription = "Emblème éducatif",
-                modifier = Modifier
-                    .size(220.dp)
-                    .graphicsLayer {
-                        alpha = fade.value
-                        scaleX = scale.value
-                        scaleY = scale.value
-                    }
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(232.dp)
+                        .alpha(halo.value)
+                        .border(1.dp, Color(0xFF1677F9), CircleShape)
+                )
+                Image(
+                    painter = painterResource(R.drawable.kalyno_splash_logo),
+                    contentDescription = "Livre ouvert, mortier et K stylisé",
+                    modifier = Modifier
+                        .size(220.dp)
+                        .graphicsLayer {
+                            alpha = fade.value
+                            scaleX = scale.value
+                            scaleY = scale.value
+                        }
+                )
+            }
 
             Spacer(modifier = Modifier.height(14.dp))
 

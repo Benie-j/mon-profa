@@ -1,38 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="220dp"
-    android:height="220dp"
-    android:viewportWidth="220"
-    android:viewportHeight="220">
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
 
+    <!-- Mortier -->
     <path android:fillColor="#0878F9"
-        android:pathData="M25,43 L92,17 L174,42 L99,70 Z"/>
+        android:pathData="M10,23 L48,8 L91,23 L51,39 Z"/>
     <path android:fillColor="#0647B5"
-        android:pathData="M47,51 L99,70 L151,51 L149,63 Q100,86 49,63 Z"/>
+        android:pathData="M22,29 L51,40 L79,29 L78,36 Q51,51 23,36 Z"/>
 
+    <!-- K stylisé -->
+    <path android:fillColor="#0878F9"
+        android:pathData="M37,35 L46,35 L46,69 L37,69 Z"/>
+    <path android:fillColor="#0878F9"
+        android:pathData="M44,51 L64,33 L73,38 L53,57 Z"/>
+    <path android:fillColor="#0878F9"
+        android:pathData="M51,57 L61,50 L76,69 L66,74 Z"/>
+
+    <!-- Accent plume dorée -->
     <path android:fillColor="#FFB32C"
-        android:pathData="M168,43 L172,44 L172,72 L168,72 Z"/>
-    <path android:fillColor="#FFB32C"
-        android:pathData="M163,71 Q170,67 177,71 L174,82 L167,82 Z"/>
+        android:pathData="M45,68 Q53,45 77,36 Q68,56 45,68 Z"/>
 
-    <path android:fillColor="#0878F9"
-        android:pathData="M72,63 L95,63 L95,143 L72,143 Z"/>
-    <path android:fillColor="#0878F9"
-        android:pathData="M89,99 L132,59 L151,67 L109,108 Z"/>
-    <path android:fillColor="#0878F9"
-        android:pathData="M105,110 L125,94 L160,137 L138,149 Z"/>
-    <path android:fillColor="#FFAD26"
-        android:pathData="M93,139 Q109,93 160,66 Q141,110 93,139 Z"/>
-
+    <!-- Pages blanches du livre ouvert -->
     <path android:fillColor="#FFFFFF"
-        android:pathData="M18,139 Q51,127 99,160 L99,180 Q56,154 18,163 Z"/>
+        android:pathData="M8,65 Q27,59 50,76 L50,88 Q29,73 8,78 Z"/>
     <path android:fillColor="#FFFFFF"
-        android:pathData="M103,160 Q153,127 202,139 L202,163 Q157,154 103,180 Z"/>
+        android:pathData="M52,76 Q76,59 100,65 L100,78 Q76,73 52,88 Z"/>
 
+    <!-- Tranche bleue -->
     <path android:fillColor="#0878F9"
-        android:pathData="M18,161 Q58,153 99,177 L99,190 Q57,167 18,175 Z"/>
+        android:pathData="M8,77 Q30,72 50,86 L50,94 Q29,81 8,85 Z"/>
     <path android:fillColor="#0878F9"
-        android:pathData="M103,177 Q153,153 202,161 L202,175 Q158,167 103,190 Z"/>
+        android:pathData="M52,86 Q76,72 100,77 L100,85 Q77,81 52,94 Z"/>
     <path android:fillColor="#0647B5"
-        android:pathData="M99,160 L103,160 L103,190 L99,190 Z"/>
+        android:pathData="M50,76 L52,76 L52,94 L50,94 Z"/>
+
+    <!-- Pompon du mortier -->
+    <path android:fillColor="#FFB32C"
+        android:pathData="M88,23 L91,24 L91,38 L88,38 Z"/>
+    <path android:fillColor="#FFB32C"
+        android:pathData="M85,37 Q90,34 94,37 L92,43 L87,43 Z"/>
 </vector>
