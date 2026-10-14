@@ -1,65 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:width="220dp"
+    android:height="220dp"
+    android:viewportWidth="220"
+    android:viewportHeight="220">
 
-    <!-- Mortier -->
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M14,27 L52,12 L94,27 L53,43 Z" />
-    <path
-        android:fillColor="#0B4FC4"
-        android:pathData="M27,33 L53,44 L80,33 L78,43 Q53,59 29,43 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M51,43 L51,69 L59,69 L59,43 Z" />
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M51,43 L59,43 L59,69 L51,69 Z" />
+    <path android:fillColor="#0878F9"
+        android:pathData="M25,43 L92,17 L174,42 L99,70 Z"/>
+    <path android:fillColor="#0647B5"
+        android:pathData="M47,51 L99,70 L151,51 L149,63 Q100,86 49,63 Z"/>
 
-    <!-- Gland du mortier -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M93,27 L96,28 L96,43 L93,43 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M89,43 Q94,40 99,43 L96,50 L92,50 Z" />
+    <path android:fillColor="#FFB32C"
+        android:pathData="M168,43 L172,44 L172,72 L168,72 Z"/>
+    <path android:fillColor="#FFB32C"
+        android:pathData="M163,71 Q170,67 177,71 L174,82 L167,82 Z"/>
 
-    <!-- K stylisé -->
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M43,48 L52,48 L52,71 L43,71 Z" />
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M51,58 L67,43 L76,47 L60,62 Z" />
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M57,61 L65,56 L78,72 L69,76 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M51,48 L57,48 L57,68 L51,68 Z" />
+    <path android:fillColor="#0878F9"
+        android:pathData="M72,63 L95,63 L95,143 L72,143 Z"/>
+    <path android:fillColor="#0878F9"
+        android:pathData="M89,99 L132,59 L151,67 L109,108 Z"/>
+    <path android:fillColor="#0878F9"
+        android:pathData="M105,110 L125,94 L160,137 L138,149 Z"/>
+    <path android:fillColor="#FFAD26"
+        android:pathData="M93,139 Q109,93 160,66 Q141,110 93,139 Z"/>
 
-    <!-- Livre ouvert -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M10,66 Q28,60 51,76 L51,94 Q29,79 10,83 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M53,76 Q76,60 98,66 L98,83 Q76,79 53,94 Z" />
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M10,82 Q31,78 51,93 L51,99 Q30,84 10,89 Z" />
-    <path
-        android:fillColor="#1677F9"
-        android:pathData="M53,93 Q75,78 98,82 L98,89 Q76,84 53,99 Z" />
-    <path
-        android:fillColor="#0B4FC4"
-        android:pathData="M51,76 L53,76 L53,99 L51,99 Z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M18,139 Q51,127 99,160 L99,180 Q56,154 18,163 Z"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M103,160 Q153,127 202,139 L202,163 Q157,154 103,180 Z"/>
 
-    <!-- Accent orange discret -->
-    <path
-        android:fillColor="#FFB547"
-        android:pathData="M94,28 L96,29 L96,42 L94,42 Z" />
+    <path android:fillColor="#0878F9"
+        android:pathData="M18,161 Q58,153 99,177 L99,190 Q57,167 18,175 Z"/>
+    <path android:fillColor="#0878F9"
+        android:pathData="M103,177 Q153,153 202,161 L202,175 Q158,167 103,190 Z"/>
+    <path android:fillColor="#0647B5"
+        android:pathData="M99,160 L103,160 L103,190 L99,190 Z"/>
 </vector>
