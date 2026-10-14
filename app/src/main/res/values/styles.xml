@@ -3,7 +3,7 @@
 
     <style name="MonProfaLaunchTheme" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#061A68</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/mon_profa_splash_logo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/kalyno_splash_logo</item>
         <item name="windowSplashScreenIconBackgroundColor">#061A68</item>
         <item name="postSplashScreenTheme">@style/MonProfaAppTheme</item>
         <item name="android:statusBarColor">#061A68</item>

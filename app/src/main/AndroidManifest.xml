@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
-        android:label="Mon profa"
+        android:label="KALYNO"
         android:supportsRtl="true"
         android:theme="@style/MonProfaLaunchTheme">
 

@@ -315,7 +315,7 @@ class MainActivity : ComponentActivity() {
                 if (confirmerSortie) {
                     AlertDialog(
                         onDismissRequest = { confirmerSortie = false },
-                        title = { Text("Quitter Mon profa ?") },
+                        title = { Text("Quitter KALYNO ?") },
                         text = {
                             Text("Veux-tu vraiment quitter l'application ? Ta session reste enregistrée.")
                         },
@@ -596,22 +596,52 @@ private fun MonProfaAnimatedSplash() {
     val fade = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        fade.animateTo(1f, animationSpec = tween(durationMillis = 450))
+        fade.animateTo(1f, animationSpec = tween(durationMillis = 500))
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF061A68)),
+        contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.mon_profa_splash_logo),
-            contentDescription = null,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(240.dp)
-                .graphicsLayer { alpha = fade.value }
-        )
+                .alpha(fade.value)
+                .padding(horizontal = 24.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.kalyno_splash_logo),
+                contentDescription = "Logo KALYNO",
+                modifier = Modifier.size(190.dp)
+            )
+            Spacer(Modifier.height(18.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "KALY",
+                    color = Color.White,
+                    fontSize = 37.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.5.sp
+                )
+                Text(
+                    text = "NO",
+                    color = Color(0xFFFFB547),
+                    fontSize = 37.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.5.sp
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "Le savoir ouvre l’avenir.",
+                color = Color(0xFFE2EAFF),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
 
         Text(
             text = "by Benie groupe",
@@ -691,53 +721,27 @@ private fun AppBackground(content: @Composable () -> Unit) {
 
 @Composable
 private fun BrandLogo(compact: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Image(
+            painter = painterResource(id = R.drawable.kalyno_splash_logo),
+            contentDescription = "Logo KALYNO",
+            modifier = Modifier.size(if (compact) 38.dp else 54.dp)
+        )
+        Spacer(Modifier.width(if (compact) 7.dp else 10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Mon",
+                text = "KALY",
                 fontSize = if (compact) 21.sp else 32.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.7).sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.6).sp,
                 color = Texte
             )
-            Spacer(Modifier.width(7.dp))
             Text(
-                "profa",
+                text = "NO",
                 fontSize = if (compact) 21.sp else 32.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.7).sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.6).sp,
                 color = Bleu
-            )
-            Text(
-                "✦",
-                modifier = Modifier.padding(start = 2.dp, bottom = if (compact) 12.dp else 20.dp),
-                fontSize = if (compact) 10.sp else 15.sp,
-                color = Jaune
-            )
-        }
-        Row(
-            modifier = Modifier.padding(top = if (compact) 4.dp else 7.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                Modifier
-                    .width(if (compact) 16.dp else 25.dp)
-                    .height(if (compact) 3.dp else 4.dp)
-                    .background(Vert, CircleShape)
-            )
-            Spacer(Modifier.width(5.dp))
-            Box(
-                Modifier
-                    .width(if (compact) 28.dp else 44.dp)
-                    .height(if (compact) 3.dp else 4.dp)
-                    .background(Jaune, CircleShape)
-            )
-            Spacer(Modifier.width(5.dp))
-            Box(
-                Modifier
-                    .width(if (compact) 16.dp else 25.dp)
-                    .height(if (compact) 3.dp else 4.dp)
-                    .background(Violet, CircleShape)
             )
         }
     }
@@ -2318,7 +2322,7 @@ private fun DashboardScreen(
                         )
                         Spacer(Modifier.height(7.dp))
                         Text(
-                            "Configure Mon profa selon tes besoins.",
+                            "Configure KALYNO selon tes besoins.",
                             fontSize = 14.sp,
                             color = Texte.copy(alpha = 0.72f)
                         )
@@ -2491,7 +2495,7 @@ private fun DashboardScreen(
 
                     "Confidentialité" -> PageInformation(
                         "Confidentialité",
-                        "Cette page présentera les données utilisées par Mon profa, leur traitement et les droits de l'utilisateur."
+                        "Cette page présentera les données utilisées par KALYNO, leur traitement et les droits de l'utilisateur."
                     )
 
                     "Notifications" -> PageInformation(

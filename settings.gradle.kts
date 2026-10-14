@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MonProfa"
+rootProject.name = "KALYNO"
 include(":app")
