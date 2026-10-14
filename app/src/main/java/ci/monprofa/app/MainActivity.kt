@@ -1,5 +1,18 @@
 package ci.monprofa.app
 
+
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.material3.Text
 import android.os.Bundle
 import android.content.Intent
 import android.net.Uri
@@ -594,66 +607,61 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MonProfaAnimatedSplash() {
     val fade = remember { Animatable(0f) }
+    val scale = remember { Animatable(0.82f) }
 
     LaunchedEffect(Unit) {
-        fade.animateTo(1f, animationSpec = tween(durationMillis = 500))
+        kotlinx.coroutines.coroutineScope {
+            launch {
+                fade.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 900)
+                )
+            }
+            launch {
+                scale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = 1100,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                    )
+                )
+            }
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF061A68)),
+            .background(Color(0xFF06152F)),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .alpha(fade.value)
-                .padding(horizontal = 24.dp)
+            verticalArrangement = Arrangement.Center
         ) {
             Image(
                 painter = painterResource(id = R.drawable.kalyno_splash_logo),
-                contentDescription = "Logo KALYNO",
-                modifier = Modifier.size(190.dp)
+                contentDescription = "Emblème éducatif",
+                modifier = Modifier
+                    .size(220.dp)
+                    .graphicsLayer {
+                        alpha = fade.value
+                        scaleX = scale.value
+                        scaleY = scale.value
+                    }
             )
-            Spacer(Modifier.height(18.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "KALY",
-                    color = Color.White,
-                    fontSize = 37.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.5.sp
-                )
-                Text(
-                    text = "NO",
-                    color = Color(0xFFFFB547),
-                    fontSize = 37.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.5.sp
-                )
-            }
-            Spacer(Modifier.height(10.dp))
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             Text(
-                text = "Le savoir ouvre l’avenir.",
-                color = Color(0xFFE2EAFF),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
+                text = "by Benie groupe",
+                color = Color(0xFFB9C9E5),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 1.sp,
+                modifier = Modifier.alpha(fade.value)
             )
         }
-
-        Text(
-            text = "by Benie groupe",
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 22.dp)
-                .alpha(fade.value),
-            color = Color(0xFFF2F7FF),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 0.25.sp
-        )
     }
 }
 
