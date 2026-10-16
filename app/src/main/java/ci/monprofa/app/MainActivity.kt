@@ -483,6 +483,8 @@ class MainActivity : ComponentActivity() {
                     )
 
                     "dashboard" -> DashboardScreen(
+                        accessToken = accessToken.orEmpty(),
+                        userId = SecureSessionStore.load(contexteApp)?.userId.orEmpty(),
                         schoolClass = classeChoisie.orEmpty(),
                         series = serieChoisie.orEmpty(),
                         pseudo = pseudoUtilisateur.ifBlank {
@@ -2002,6 +2004,8 @@ private fun dashboardGreeting(
 
 @Composable
 private fun DashboardScreen(
+    accessToken: String,
+    userId: String,
     schoolClass: String,
     series: String,
     pseudo: String,
@@ -2011,6 +2015,30 @@ private fun DashboardScreen(
     onLogout: () -> Unit
 ) {
     val contexte = androidx.compose.ui.platform.LocalContext.current
+    var currentStreak by remember(userId) { mutableIntStateOf(0) }
+    var longestStreak by remember(userId) { mutableIntStateOf(0) }
+    var streakLoaded by remember(userId) { mutableStateOf(false) }
+    var streakError by remember(userId) { mutableStateOf(false) }
+
+    LaunchedEffect(accessToken, userId) {
+        streakLoaded = false
+        streakError = false
+
+        if (accessToken.isBlank() || userId.isBlank()) {
+            streakError = true
+        } else {
+            runCatching {
+                SupabaseBackend.registerDailyStreakActivity(accessToken)
+            }.onSuccess { status ->
+                currentStreak = status.currentStreak
+                longestStreak = status.longestStreak
+                streakLoaded = true
+            }.onFailure {
+                streakError = true
+            }
+        }
+    }
+
     val pile = remember {
         mutableStateListOf("dashboard")
     }
@@ -2139,6 +2167,14 @@ private fun DashboardScreen(
                 }
 
                 Spacer(Modifier.height(28.dp))
+
+                StreakCard(
+                    currentStreak = currentStreak,
+                    longestStreak = longestStreak,
+                    loaded = streakLoaded,
+                    error = streakError
+                )
+                Spacer(Modifier.height(22.dp))
 
                 Text(
                     "Ton espace de travail",
@@ -2565,6 +2601,66 @@ private fun DashboardScreen(
                 }
 
                 Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreakCard(
+    currentStreak: Int,
+    longestStreak: Int,
+    loaded: Boolean,
+    error: Boolean
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFFFFF7E8),
+        border = BorderStroke(1.dp, Color(0xFFF4D7A1)),
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 17.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(Color(0xFFFFE7B3), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🔥", fontSize = 28.sp)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    if (currentStreak == 1) "Ta série commence !" else "Ta série KALYNO",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF784313)
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    when {
+                        loaded -> "$currentStreak jour${if (currentStreak > 1) "s" else ""} consécutif${if (currentStreak > 1) "s" else ""}"
+                        error -> "Série momentanément indisponible"
+                        else -> "Synchronisation de ta régularité…"
+                    },
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF8A5A22)
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    when {
+                        loaded -> "Meilleure série : $longestStreak jour${if (longestStreak > 1) "s" else ""}"
+                        error -> "Vérifie ta connexion puis rouvre le tableau de bord."
+                        else -> "Ta série sera actualisée après connexion."
+                    },
+                    fontSize = 12.sp,
+                    color = Color(0xFF8A5A22)
+                )
             }
         }
     }

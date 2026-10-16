@@ -247,6 +247,33 @@ object SupabaseBackend {
         return getProfile(accessToken, userId)
     }
 
+    /**
+     * Enregistre l'ouverture quotidienne du tableau de bord et renvoie la série
+     * calculée côté PostgreSQL. La date n'est jamais fournie par le client.
+     */
+    data class StreakStatus(
+        val currentStreak: Int,
+        val longestStreak: Int,
+        val lastActivityDate: String
+    )
+
+    suspend fun registerDailyStreakActivity(accessToken: String): StreakStatus {
+        require(accessToken.isNotBlank()) { "Session expirée. Reconnecte-toi." }
+        val response = JSONObject(
+            request(
+                "/rest/v1/rpc/register_daily_streak_activity",
+                "POST",
+                JSONObject(),
+                accessToken
+            )
+        )
+        return StreakStatus(
+            currentStreak = response.optInt("current_streak", 0),
+            longestStreak = response.optInt("longest_streak", 0),
+            lastActivityDate = response.optString("last_activity_date")
+        )
+    }
+
     suspend fun sendPasswordReset(email: String) {
         request(
             "/auth/v1/recover",
