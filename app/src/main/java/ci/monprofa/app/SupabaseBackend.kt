@@ -332,6 +332,56 @@ object SupabaseBackend {
         )
     }
 
+    data class Subject(
+        val id: String,
+        val name: String,
+        val schoolClass: String,
+        val series: String?,
+        val description: String,
+        val sortOrder: Int
+    )
+
+    suspend fun getSubjects(
+        accessToken: String,
+        schoolClass: String
+    ): List<Subject> {
+        require(schoolClass.isNotBlank()) {
+            "La classe de ton profil n'est pas renseignée."
+        }
+
+        val encodedClass = URLEncoder.encode(schoolClass.trim(), "UTF-8")
+        val path =
+            "/rest/v1/kalyno_subjects" +
+            "?select=id,name,school_class,series,description,sort_order" +
+            "&school_class=eq.$encodedClass" +
+            "&order=sort_order.asc,name.asc"
+
+        val rows = JSONArray(
+            request(path, "GET", accessToken = accessToken.takeIf { it.isNotBlank() })
+        )
+
+        return buildList {
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                val name = row.optString("name").trim()
+                if (name.isBlank()) continue
+
+                add(
+                    Subject(
+                        id = row.optString("id"),
+                        name = name,
+                        schoolClass = row.optString("school_class"),
+                        series = row.optString("series")
+                            .takeIf { it.isNotBlank() && it != "null" },
+                        description = row.optString("description")
+                            .takeIf { it != "null" }.orEmpty(),
+                        sortOrder = row.optInt("sort_order", 0)
+                    )
+                )
+            }
+        }
+    }
+
     private suspend fun request(
         path: String,
         method: String = "GET",
