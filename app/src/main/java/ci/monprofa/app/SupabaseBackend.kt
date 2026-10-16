@@ -282,11 +282,63 @@ object SupabaseBackend {
         )
     }
 
+
+    /**
+     * Envoie les tentatives locales. Le serveur ignore les UUID déjà reçus,
+     * ce qui permet de répéter un envoi après une coupure réseau.
+     */
+    suspend fun uploadAttempts(
+        accessToken: String,
+        attempts: List<ExerciseAttempt>
+    ) {
+        require(accessToken.isNotBlank()) {
+            "Session expirée. Reconnecte-toi."
+        }
+        if (attempts.isEmpty()) return
+
+        val payload = JSONArray()
+        attempts.forEach { attempt ->
+            payload.put(
+                JSONObject()
+                    .put("id", attempt.id)
+                    .put("user_id", attempt.userId)
+                    .put("exercise_id", attempt.exerciseId)
+                    .put("subject_id", attempt.subjectId ?: JSONObject.NULL)
+                    .put("topic_id", attempt.topicId ?: JSONObject.NULL)
+                    .put("answer_json", JSONObject(attempt.answerJson))
+                    .put(
+                        "earned_points",
+                        attempt.earnedPoints
+                    )
+                    .put(
+                        "possible_points",
+                        attempt.possiblePoints
+                    )
+                    .put(
+                        "completed_at",
+                        java.time.Instant.ofEpochMilli(
+                            attempt.completedAtEpochMs
+                        ).toString()
+                    )
+            )
+        }
+
+        request(
+            path = "/rest/v1/exercise_attempts",
+            method = "POST",
+            accessToken = accessToken,
+            rawBody = payload.toString(),
+            prefer = "resolution=ignore-duplicates,return=minimal"
+        )
+    }
+
     private suspend fun request(
         path: String,
         method: String = "GET",
         body: JSONObject? = null,
-        accessToken: String? = null
+        accessToken: String? = null,
+        rawBody: String? = null,
+        prefer: String? = null
     ): String = withContext(Dispatchers.IO) {
         val connection = URL(BASE_URL + path).openConnection() as HttpURLConnection
 
@@ -301,11 +353,15 @@ object SupabaseBackend {
                 connection.setRequestProperty("Authorization", "Bearer $accessToken")
             }
 
-            if (body != null) {
+            if (!prefer.isNullOrBlank()) {
+                connection.setRequestProperty("Prefer", prefer)
+            }
+
+            if (body != null || rawBody != null) {
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 connection.outputStream.bufferedWriter(Charsets.UTF_8).use {
-                    it.write(body.toString())
+                    it.write(rawBody ?: body!!.toString())
                 }
             }
 

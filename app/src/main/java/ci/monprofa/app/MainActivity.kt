@@ -2024,6 +2024,10 @@ private fun DashboardScreen(
         streakLoaded = false
         streakError = false
 
+        if (accessToken.isNotBlank() && userId.isNotBlank()) {
+            AttemptSyncScheduler.enqueue(contexte)
+        }
+
         if (accessToken.isBlank() || userId.isBlank()) {
             streakError = true
         } else {
