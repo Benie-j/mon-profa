@@ -2595,6 +2595,9 @@ private fun DashboardScreen(
                     else -> {
                         RubriqueMonProfaScreen(
                             titre = page,
+                            accessToken = accessToken,
+                            schoolClass = schoolClass,
+                            series = series,
                             onRetour = { retourPage() }
                         )
                     }
@@ -2760,8 +2763,44 @@ private fun PageInformation(titre: String, texte: String) {
 @Composable
 private fun RubriqueMonProfaScreen(
     titre: String,
+    accessToken: String,
+    schoolClass: String,
+    series: String,
     onRetour: () -> Unit
 ) {
+    var disciplines by remember(titre, schoolClass, series) {
+        mutableStateOf<List<SupabaseBackend.Subject>>(emptyList())
+    }
+    var chargementDisciplines by remember(titre, schoolClass, series) {
+        mutableStateOf(false)
+    }
+    var erreurDisciplines by remember(titre, schoolClass, series) {
+        mutableStateOf<String?>(null)
+    }
+
+    var tentativeChargement by remember { mutableStateOf(0) }
+
+    LaunchedEffect(titre, accessToken, schoolClass, series, tentativeChargement) {
+        if (titre == "Mes disciplines") {
+            chargementDisciplines = true
+            erreurDisciplines = null
+            try {
+                val resultat = SupabaseBackend.getSubjects(
+                    accessToken = accessToken,
+                    schoolClass = schoolClass
+                )
+                disciplines = resultat.filter {
+                    it.series.isNullOrBlank() ||
+                        it.series.equals(series, ignoreCase = true)
+                }
+            } catch (e: Exception) {
+                erreurDisciplines = e.message
+                    ?: "Impossible de charger les disciplines."
+            } finally {
+                chargementDisciplines = false
+            }
+        }
+    }
     val description = when (titre) {
         "Mes disciplines" ->
             "Retrouve ici tes matières scolaires et les contenus de cours."
@@ -2798,19 +2837,132 @@ private fun RubriqueMonProfaScreen(
             )
             Spacer(Modifier.height(14.dp))
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFE2E9F5))
-            ) {
-                Text(
-                    description,
-                    modifier = Modifier.padding(20.dp),
-                    fontSize = 16.sp,
-                    lineHeight = 25.sp,
-                    color = Texte
-                )
+            if (titre == "Mes disciplines") {
+                when {
+                    chargementDisciplines -> {
+                        CircularProgressIndicator(color = Bleu)
+                        Spacer(Modifier.height(12.dp))
+                        Text("Chargement de tes disciplines…", color = Texte)
+                    }
+
+                    erreurDisciplines != null -> {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                        ) {
+                            Column(Modifier.padding(18.dp)) {
+                                Text(
+                                    "Connexion impossible",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Texte
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    erreurDisciplines.orEmpty(),
+                                    color = Texte,
+                                    lineHeight = 22.sp
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                TextButton(onClick = {
+                                    erreurDisciplines = null
+                                    tentativeChargement++
+                                }) {
+                                    Text("Réessayer", color = Bleu)
+                                }
+                            }
+                        }
+                    }
+
+                    disciplines.isEmpty() -> {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                        ) {
+                            Text(
+                                "Aucune discipline n'est encore disponible pour ta classe" +
+                                    (if (schoolClass == "Terminale" && series.isNotBlank())
+                                        " et ta série ($series)." else "."),
+                                modifier = Modifier.padding(20.dp),
+                                fontSize = 15.sp,
+                                lineHeight = 23.sp,
+                                color = Texte
+                            )
+                        }
+                    }
+
+                    else -> {
+                        disciplines.forEach { discipline ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 10.dp),
+                                shape = RoundedCornerShape(18.dp),
+                                color = Color.White,
+                                border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(17.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Fond
+                                    ) {
+                                        Text(
+                                            "📘",
+                                            modifier = Modifier.padding(12.dp),
+                                            fontSize = 22.sp
+                                        )
+                                    }
+                                    Spacer(Modifier.width(13.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            discipline.name,
+                                            fontSize = 17.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Texte
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            discipline.schoolClass +
+                                                (discipline.series?.let { " · Série $it" } ?: ""),
+                                            fontSize = 13.sp,
+                                            color = Bleu
+                                        )
+                                        if (discipline.description.isNotBlank()) {
+                                            Spacer(Modifier.height(5.dp))
+                                            Text(
+                                                discipline.description,
+                                                fontSize = 13.sp,
+                                                lineHeight = 19.sp,
+                                                color = Texte.copy(alpha = 0.75f)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFE2E9F5))
+                ) {
+                    Text(
+                        description,
+                        modifier = Modifier.padding(20.dp),
+                        fontSize = 16.sp,
+                        lineHeight = 25.sp,
+                        color = Texte
+                    )
+                }
             }
         }
 }
