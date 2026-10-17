@@ -2015,6 +2015,20 @@ private fun DashboardScreen(
     onLogout: () -> Unit
 ) {
     val contexte = androidx.compose.ui.platform.LocalContext.current
+
+    // Préchargement automatique des disciplines après connexion.
+    LaunchedEffect(accessToken, schoolClass) {
+        if (accessToken.isNotBlank() && schoolClass.isNotBlank()) {
+            runCatching {
+                val subjects = SupabaseBackend.getSubjects(
+                    accessToken = accessToken,
+                    schoolClass = schoolClass
+                )
+                OfflineSubjectStore.save(contexte, subjects)
+            }
+        }
+    }
+
     var currentStreak by remember(userId) { mutableIntStateOf(0) }
     var longestStreak by remember(userId) { mutableIntStateOf(0) }
     var streakLoaded by remember(userId) { mutableStateOf(false) }
@@ -2768,11 +2782,17 @@ private fun RubriqueMonProfaScreen(
     series: String,
     onRetour: () -> Unit
 ) {
+    val contexte = androidx.compose.ui.platform.LocalContext.current
+
     var disciplines by remember(titre, schoolClass, series) {
-        mutableStateOf<List<SupabaseBackend.Subject>>(emptyList())
+        mutableStateOf(
+            OfflineSubjectStore.load(contexte, schoolClass, series)
+        )
     }
     var chargementDisciplines by remember(titre, schoolClass, series) {
-        mutableStateOf(false)
+        mutableStateOf(
+            OfflineSubjectStore.load(contexte, schoolClass, series).isEmpty()
+        )
     }
     var erreurDisciplines by remember(titre, schoolClass, series) {
         mutableStateOf<String?>(null)
@@ -2782,20 +2802,37 @@ private fun RubriqueMonProfaScreen(
 
     LaunchedEffect(titre, accessToken, schoolClass, series, tentativeChargement) {
         if (titre == "Mes disciplines") {
-            chargementDisciplines = true
+            val cache = OfflineSubjectStore.load(
+                contexte,
+                schoolClass,
+                series
+            )
+
+            // Afficher les données locales sans attendre Internet.
+            disciplines = cache
+            chargementDisciplines = cache.isEmpty()
             erreurDisciplines = null
+
             try {
                 val resultat = SupabaseBackend.getSubjects(
                     accessToken = accessToken,
                     schoolClass = schoolClass
                 )
+
+                // Sauvegarder toutes les séries reçues avant le filtrage.
+                OfflineSubjectStore.save(contexte, resultat)
+
                 disciplines = resultat.filter {
                     it.series.isNullOrBlank() ||
                         it.series.equals(series, ignoreCase = true)
                 }
+                erreurDisciplines = null
             } catch (e: Exception) {
-                erreurDisciplines = e.message
-                    ?: "Impossible de charger les disciplines."
+                erreurDisciplines = if (cache.isNotEmpty()) {
+                    "Connexion indisponible : les disciplines enregistrées sur cet appareil sont affichées."
+                } else {
+                    e.message ?: "Impossible de charger les disciplines. Connecte-toi à Internet pour le premier téléchargement."
+                }
             } finally {
                 chargementDisciplines = false
             }
@@ -2839,13 +2876,13 @@ private fun RubriqueMonProfaScreen(
 
             if (titre == "Mes disciplines") {
                 when {
-                    chargementDisciplines -> {
+                    chargementDisciplines && disciplines.isEmpty() -> {
                         CircularProgressIndicator(color = Bleu)
                         Spacer(Modifier.height(12.dp))
                         Text("Chargement de tes disciplines…", color = Texte)
                     }
 
-                    erreurDisciplines != null -> {
+                    erreurDisciplines != null && disciplines.isEmpty() -> {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(18.dp),
@@ -2895,6 +2932,28 @@ private fun RubriqueMonProfaScreen(
                     }
 
                     else -> {
+                        if (erreurDisciplines != null) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFEAF5FF),
+                                border = BorderStroke(
+                                    1.dp,
+                                    Color(0xFFB9D7FA)
+                                )
+                            ) {
+                                Text(
+                                    "Mode hors ligne — tes disciplines enregistrées restent accessibles.",
+                                    modifier = Modifier.padding(14.dp),
+                                    fontSize = 13.sp,
+                                    lineHeight = 19.sp,
+                                    color = Texte
+                                )
+                            }
+                        }
+
                         disciplines.forEach { discipline ->
                             Surface(
                                 modifier = Modifier
